@@ -102,6 +102,7 @@ async function doLogin(e) {
   btn.disabled = true;
 
   try {
+    console.log('ログイン試行:', name, code);
     // client_usersテーブルで名前（部分一致）＋ログインコードで認証
     const { data, error } = await supabase
       .from('client_users')
@@ -111,6 +112,7 @@ async function doLogin(e) {
       .eq('login_code', code)
       .limit(1);
 
+    console.log('Supabase応答:', { data, error });
     if (error) throw error;
 
     if (data && data.length > 0) {
