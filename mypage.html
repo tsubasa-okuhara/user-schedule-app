@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>マイページ - 利用者アプリ</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif;background:#f0f4f8;color:#333;min-height:100vh}
+  .header{background:linear-gradient(135deg,#2c7a5c,#3a9d72);color:#fff;padding:20px 20px 24px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .header h1{font-size:20px;font-weight:700}
+  .logout-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer}
+  .logout-btn:active{background:rgba(255,255,255,.35)}
+  .profile-row{display:flex;align-items:center;gap:14px}
+  .avatar{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;border:3px solid rgba(255,255,255,.4)}
+  .profile-info .p-name{font-size:18px;font-weight:700}
+  .profile-info .p-detail{font-size:12px;opacity:.85;margin-top:2px}
+  .content{padding:14px 14px 90px}
+  .sec-title{font-size:14px;font-weight:700;color:#555;margin-bottom:8px;padding-left:2px;display:flex;align-items:center;gap:6px}
+  .sec-title .sec-icon{font-size:16px}
+  .summary-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+  .sum-card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center}
+  .sum-card .s-label{font-size:11px;color:#999;margin-bottom:4px}
+  .sum-card .s-value{font-size:26px;font-weight:800}
+  .sum-card .s-unit{font-size:12px;color:#666;font-weight:500}
+  .sum-card .s-sub{font-size:11px;color:#aaa;margin-top:2px}
+  .sum-card.green .s-value{color:#2c7a5c}
+  .sum-card.blue .s-value{color:#1976d2}
+  .sum-card.orange .s-value{color:#e65100}
+  .sum-card.purple .s-value{color:#7b1fa2}
+  .summary-detail{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:18px}
+  .sd-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+  .sd-row:last-child{border-bottom:none}
+  .sd-label{display:flex;align-items:center;gap:8px;color:#555}
+  .sd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .sd-value{font-weight:700;color:#333}
+  .notice-list{margin-bottom:18px}
+  .notice-card{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05);cursor:pointer;transition:background .15s}
+  .notice-card:active{background:#f8faf9}
+  .notice-card.unread{border-left:4px solid #2c7a5c}
+  .notice-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .notice-tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+  .notice-tag.info{background:#e3f2fd;color:#1565c0}
+  .notice-tag.schedule{background:#e8f5e9;color:#2e7d32}
+  .notice-tag.important{background:#fce4ec;color:#c62828}
+  .notice-date{font-size:11px;color:#aaa}
+  .notice-title{font-size:14px;font-weight:600;color:#333;margin-bottom:2px}
+  .notice-card.unread .notice-title{color:#2c7a5c}
+  .notice-body{font-size:12px;color:#888;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .notice-more{text-align:center;padding:8px;font-size:13px;color:#2c7a5c;font-weight:600;cursor:pointer}
+  .contact-card{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;margin-bottom:18px}
+  .contact-office{padding:14px 16px;border-bottom:1px solid #f0f0f0}
+  .office-name{font-size:15px;font-weight:700;margin-bottom:2px}
+  .office-sub{font-size:12px;color:#888}
+  .contact-actions{display:flex}
+  .contact-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:14px 8px;border:none;background:none;cursor:pointer;gap:4px;transition:background .15s}
+  .contact-btn:active{background:#f5f9f7}
+  .contact-btn:not(:last-child){border-right:1px solid #f0f0f0}
+  .contact-btn .c-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .contact-btn .c-icon.phone{background:#e8f5e9}
+  .contact-btn .c-icon.msg{background:#e3f2fd}
+  .contact-btn .c-icon.map{background:#fff3e0}
+  .contact-btn .c-label{font-size:11px;font-weight:600;color:#666}
+  .menu-list{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;margin-bottom:18px}
+  .menu-item{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;gap:12px;transition:background .15s}
+  .menu-item:last-child{border-bottom:none}
+  .menu-item:active{background:#f8faf9}
+  .menu-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .menu-icon.green{background:#e8f5e9}.menu-icon.blue{background:#e3f2fd}.menu-icon.gray{background:#f5f5f5}
+  .menu-text{flex:1;font-size:14px;font-weight:600;color:#333}
+  .menu-arrow{color:#ccc;font-size:14px}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
+  .modal-overlay.show{display:flex;animation:fadeIn .2s ease}
+  .modal{background:#fff;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0));width:100%;max-width:480px;max-height:70vh;overflow-y:auto;animation:slideUp .3s ease}
+  .modal h3{font-size:17px;margin-bottom:12px}
+  .modal .m-date{font-size:12px;color:#aaa;margin-bottom:12px}
+  .modal .m-body{font-size:14px;line-height:1.7;color:#555}
+  .modal-close{display:block;width:100%;margin-top:16px;padding:13px;border:none;border-radius:12px;background:#eee;font-size:15px;font-weight:700;color:#666;cursor:pointer}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;box-shadow:0 -2px 10px rgba(0,0,0,.08);z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
+  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px 6px;color:#999;font-size:10px;cursor:pointer;border:none;background:none;text-decoration:none}
+  .nav-item.active{color:#2c7a5c}
+  .nav-item svg{width:22px;height:22px;margin-bottom:2px}
+  .nav-item span{font-weight:600}
+  @media(min-width:480px){body{max-width:480px;margin:0 auto;background:#e0e5eb}.bottom-nav{max-width:480px;left:50%;transform:translateX(-50%)}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-top"><h1>マイページ</h1><button class="logout-btn" onclick="doLogout()">ログアウト</button></div>
+  <div class="profile-row">
+    <div class="avatar">👤</div>
+    <div class="profile-info"><div class="p-name">山田 太郎 さん</div><div class="p-detail">居宅介護・移動支援</div></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sec-title"><span class="sec-icon">📊</span>今月の利用実績（4月）</div>
+  <div class="summary-cards">
+    <div class="sum-card green"><div class="s-label">利用回数</div><div class="s-value">15<span class="s-unit">回</span></div><div class="s-sub">先月 +2</div></div>
+    <div class="sum-card blue"><div class="s-label">合計時間</div><div class="s-value">38<span class="s-unit">時間</span></div><div class="s-sub">先月 +4h</div></div>
+    <div class="sum-card orange"><div class="s-label">確認済み</div><div class="s-value">11<span class="s-unit">回</span></div><div class="s-sub">残り4件</div></div>
+    <div class="sum-card purple"><div class="s-label">スケジュール提出</div><div class="s-value" style="font-size:16px">未提出</div><div class="s-sub">期限 4/20</div></div>
+  </div>
+  <div class="summary-detail">
+    <div class="sd-row"><span class="sd-label"><span class="sd-dot" style="background:#4caf50"></span>居宅介護</span><span class="sd-value">8回 / 19h</span></div>
+    <div class="sd-row"><span class="sd-label"><span class="sd-dot" style="background:#2196f3"></span>移動支援</span><span class="sd-value">3回 / 7.5h</span></div>
+    <div class="sd-row"><span class="sd-label"><span class="sd-dot" style="background:#ff9800"></span>家事援助</span><span class="sd-value">3回 / 6h</span></div>
+    <div class="sd-row"><span class="sd-label"><span class="sd-dot" style="background:#9c27b0"></span>通院介助</span><span class="sd-value">1回 / 2h</span></div>
+  </div>
+
+  <div class="sec-title"><span class="sec-icon">🔔</span>お知らせ</div>
+  <div class="notice-list">
+    <div class="notice-card unread" onclick="openNotice(0)"><div class="notice-top"><span class="notice-tag important">重要</span><span class="notice-date">4月3日</span></div><div class="notice-title">5月スケジュールの提出をお願いします</div><div class="notice-body">来月（5月）のスケジュール提出期限は4月20日です。スケジュール画面の「提出」タブよりご提出ください。</div></div>
+    <div class="notice-card unread" onclick="openNotice(1)"><div class="notice-top"><span class="notice-tag schedule">スケジュール</span><span class="notice-date">4月2日</span></div><div class="notice-title">4/8 通院介助の変更が承認されました</div><div class="notice-body">申請いただいた4月8日の通院介助キャンセルが承認されました。</div></div>
+    <div class="notice-card" onclick="openNotice(2)"><div class="notice-top"><span class="notice-tag info">お知らせ</span><span class="notice-date">3月28日</span></div><div class="notice-title">ゴールデンウィーク期間の営業について</div><div class="notice-body">4月29日〜5月5日のサービス提供体制についてお知らせします。</div></div>
+    <div class="notice-card" onclick="openNotice(3)"><div class="notice-top"><span class="notice-tag info">お知らせ</span><span class="notice-date">3月20日</span></div><div class="notice-title">アプリが新しくなりました</div><div class="notice-body">スケジュールの確認・提出・変更がアプリからできるようになりました。</div></div>
+    <div class="notice-more" onclick="alert('すべてのお知らせを表示')">過去のお知らせを見る</div>
+  </div>
+
+  <div class="sec-title"><span class="sec-icon">📞</span>お問い合わせ</div>
+  <div class="contact-card">
+    <div class="contact-office"><div class="office-name">○○ケアサービス</div><div class="office-sub">受付時間：平日 9:00〜17:00</div></div>
+    <div class="contact-actions">
+      <button class="contact-btn" onclick="alert('電話を発信: 000-0000-0000')"><div class="c-icon phone">📞</div><span class="c-label">電話する</span></button>
+      <button class="contact-btn" onclick="openMessage()"><div class="c-icon msg">💬</div><span class="c-label">メッセージ</span></button>
+      <button class="contact-btn" onclick="alert('地図アプリを開きます')"><div class="c-icon map">📍</div><span class="c-label">所在地</span></button>
+    </div>
+  </div>
+  <div class="contact-card">
+    <div class="contact-office"><div class="office-name">担当ヘルパー</div><div class="office-sub">佐藤 花子</div></div>
+    <div class="contact-actions">
+      <button class="contact-btn" onclick="alert('電話を発信')"><div class="c-icon phone">📞</div><span class="c-label">電話する</span></button>
+      <button class="contact-btn" onclick="openMessage()"><div class="c-icon msg">💬</div><span class="c-label">メッセージ</span></button>
+    </div>
+  </div>
+
+  <div class="sec-title"><span class="sec-icon">⚙️</span>その他</div>
+  <div class="menu-list">
+    <div class="menu-item" onclick="alert('利用者情報を表示')"><div class="menu-icon green">📋</div><span class="menu-text">利用者情報</span><span class="menu-arrow">▶</span></div>
+    <div class="menu-item" onclick="alert('利用履歴を表示')"><div class="menu-icon blue">📁</div><span class="menu-text">過去の利用履歴</span><span class="menu-arrow">▶</span></div>
+    <div class="menu-item" onclick="alert('文字サイズ設定')"><div class="menu-icon gray">🔤</div><span class="menu-text">文字サイズ設定</span><span class="menu-arrow">▶</span></div>
+    <div class="menu-item" onclick="alert('ヘルプ・使い方')"><div class="menu-icon gray">❓</div><span class="menu-text">ヘルプ・使い方</span><span class="menu-arrow">▶</span></div>
+  </div>
+</div>
+
+<!-- お知らせモーダル -->
+<div class="modal-overlay" id="noticeModal"><div class="modal">
+  <h3 id="noticeTitle"></h3><div class="m-date" id="noticeDate"></div><div class="m-body" id="noticeBody"></div>
+  <button class="modal-close" onclick="document.getElementById('noticeModal').classList.remove('show')">閉じる</button>
+</div></div>
+
+<!-- メッセージモーダル -->
+<div class="modal-overlay" id="msgModal"><div class="modal">
+  <h3>メッセージを送る</h3>
+  <div style="margin-bottom:12px"><label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:5px">宛先</label><div style="padding:10px 12px;background:#f5f5f5;border-radius:10px;font-size:14px">○○ケアサービス</div></div>
+  <div style="margin-bottom:12px"><label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:5px">カテゴリ</label><select style="width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;font-family:inherit"><option>一般的な問い合わせ</option><option>スケジュールについて</option><option>サービス内容について</option><option>その他</option></select></div>
+  <div style="margin-bottom:12px"><label style="font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:5px">メッセージ</label><textarea style="width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;font-family:inherit;min-height:100px;resize:vertical" placeholder="ご連絡内容を入力してください"></textarea></div>
+  <div style="display:flex;gap:10px"><button class="modal-close" style="flex:1" onclick="document.getElementById('msgModal').classList.remove('show')">戻る</button><button style="flex:1;padding:13px;border:none;border-radius:12px;background:#2c7a5c;color:#fff;font-size:15px;font-weight:700;cursor:pointer" onclick="alert('送信しました');document.getElementById('msgModal').classList.remove('show')">送信</button></div>
+</div></div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+    <span>実績記録</span>
+  </a>
+  <a class="nav-item" href="schedule.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    <span>スケジュール</span>
+  </a>
+  <a class="nav-item" href="schedule.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg>
+    <span>設定</span>
+  </a>
+  <a class="nav-item active" href="mypage.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5.5 21a8.38 8.38 0 0113 0"/></svg>
+    <span>マイページ</span>
+  </a>
+</nav>
+
+<script>
+const notices=[
+  {title:'5月スケジュールの提出をお願いします',date:'2026年4月3日',body:'来月（5月）のスケジュール提出期限は4月20日です。\n\nスケジュール画面の「提出」タブよりご提出ください。\n\n期限を過ぎますと、前月と同じスケジュールが自動で適用されます。変更がある場合は必ず期限内にご提出をお願いいたします。'},
+  {title:'4/8 通院介助の変更が承認されました',date:'2026年4月2日',body:'申請いただいた下記の変更が承認されました。\n\n【変更内容】\n・4月8日（水）通院介助 13:00〜15:00\n・キャンセル\n\nスケジュール画面に反映済みです。'},
+  {title:'ゴールデンウィーク期間の営業について',date:'2026年3月28日',body:'ゴールデンウィーク期間中のサービス提供体制についてお知らせいたします。\n\n【通常営業】4月29日〜5月1日\n【休業日】5月2日〜5月5日\n\n休業期間中の緊急連絡先は追ってご案内いたします。'},
+  {title:'アプリが新しくなりました',date:'2026年3月20日',body:'利用者アプリをリニューアルしました。\n\n【新機能】\n・スケジュールの確認がカレンダー形式で見やすくなりました\n・スケジュールの変更・キャンセル・追加がアプリから申請できます\n・来月分のスケジュール提出がアプリからできます\n・事業所へのメッセージ送信機能を追加しました'}
+];
+function openNotice(i){const n=notices[i];document.getElementById('noticeTitle').textContent=n.title;document.getElementById('noticeDate').textContent=n.date;document.getElementById('noticeBody').innerHTML=n.body.replace(/\n/g,'<br>');document.getElementById('noticeModal').classList.add('show')}
+function openMessage(){document.getElementById('msgModal').classList.add('show')}
+function doLogout(){if(confirm('ログアウトしますか？'))window.location.href='index.html'}
+</script>
+</body>
+</html>

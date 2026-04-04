@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ログイン - 利用者アプリ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+    background: linear-gradient(160deg, #e8f5e9 0%, #f0f4f8 40%, #e3f2fd 100%);
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .login-container { width: 100%; max-width: 400px; }
+  .logo-area { text-align: center; margin-bottom: 36px; }
+  .logo-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, #2c7a5c, #3a9d72);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px;
+    box-shadow: 0 4px 16px rgba(44,122,92,0.3);
+    font-size: 34px;
+  }
+  .app-name { font-size: 22px; font-weight: 700; color: #2c7a5c; letter-spacing: 2px; }
+  .app-sub { font-size: 13px; color: #888; margin-top: 4px; }
+  .login-card {
+    background: white; border-radius: 20px; padding: 28px 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .login-card h2 { font-size: 17px; text-align: center; margin-bottom: 24px; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+  .input-wrap { position: relative; }
+  .input-wrap .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #aaa; }
+  .form-group input {
+    width: 100%; padding: 14px 14px 14px 44px;
+    border: 2px solid #e0e0e0; border-radius: 12px;
+    font-size: 16px; font-family: inherit;
+    transition: border-color 0.2s; -webkit-appearance: none; background: #fafafa;
+  }
+  .form-group input:focus { outline: none; border-color: #2c7a5c; background: white; }
+  .form-group input::placeholder { color: #bbb; }
+  .input-hint { font-size: 11px; color: #aaa; margin-top: 4px; padding-left: 2px; }
+  .error-msg {
+    background: #fce4ec; color: #c62828; padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; text-align: center; margin-bottom: 16px; display: none;
+  }
+  .error-msg.show { display: block; animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)}
+  }
+  .login-btn {
+    width: 100%; padding: 15px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #2c7a5c, #3a9d72);
+    color: white; font-size: 17px; font-weight: 700; cursor: pointer;
+    letter-spacing: 2px; transition: opacity 0.2s, transform 0.1s; margin-top: 6px;
+  }
+  .login-btn:active { transform: scale(0.97); }
+  .login-btn:disabled { opacity: 0.5; cursor: default; }
+  .login-btn .spinner {
+    display: none; width: 20px; height: 20px;
+    border: 3px solid rgba(255,255,255,0.3); border-top-color: white;
+    border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto;
+  }
+  .login-btn.loading .btn-text { display: none; }
+  .login-btn.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .login-footer { text-align: center; margin-top: 24px; }
+  .login-footer p { font-size: 12px; color: #aaa; line-height: 1.6; }
+  .help-link { color: #2c7a5c; text-decoration: none; font-weight: 600; cursor: pointer; }
+  @media (min-width: 480px) { body { background: #e0e5eb; } }
+</style>
+</head>
+<body>
+<div class="login-container">
+  <div class="logo-area">
+    <div class="logo-icon">📋</div>
+    <div class="app-name">利用者アプリ</div>
+    <div class="app-sub">スケジュール管理・実績確認</div>
+  </div>
+  <div class="login-card">
+    <h2>ログイン</h2>
+    <div class="error-msg" id="errorMsg">利用者名または受給者番号が正しくありません</div>
+    <form onsubmit="doLogin(event)">
+      <div class="form-group">
+        <label>利用者名</label>
+        <div class="input-wrap">
+          <span class="icon">👤</span>
+          <input type="text" id="userName" placeholder="例：山田 太郎" autocomplete="name" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>受給者番号（下4桁）</label>
+        <div class="input-wrap">
+          <span class="icon">🔑</span>
+          <input type="tel" id="userCode" placeholder="例：1234" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" required>
+        </div>
+        <div class="input-hint">受給者証に記載の番号の下4桁を入力してください</div>
+      </div>
+      <button type="submit" class="login-btn" id="loginBtn">
+        <span class="btn-text">ログイン</span>
+        <div class="spinner"></div>
+      </button>
+    </form>
+  </div>
+  <div class="login-footer">
+    <p>ログインできない場合は<br>
+    <a class="help-link" onclick="showHelp()">事業所までお問い合わせください</a></p>
+  </div>
+</div>
+<script>
+  function doLogin(e) {
+    e.preventDefault();
+    const name = document.getElementById('userName').value.trim();
+    const code = document.getElementById('userCode').value.trim();
+    const btn = document.getElementById('loginBtn');
+    const err = document.getElementById('errorMsg');
+    err.classList.remove('show');
+    if (!name || code.length !== 4) { err.classList.add('show'); return; }
+    btn.classList.add('loading'); btn.disabled = true;
+    setTimeout(() => {
+      if (code === '1234') {
+        window.location.href = 'schedule.html';
+      } else {
+        btn.classList.remove('loading'); btn.disabled = false;
+        err.textContent = '利用者名または受給者番号が正しくありません';
+        err.classList.add('show');
+      }
+    }, 1200);
+  }
+  document.getElementById('userCode').addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+  });
+  function showHelp() {
+    alert('お電話：000-0000-0000\n受付時間：平日 9:00〜17:00\n\n※事業所名を入れてください');
+  }
+</script>
+</body>
+</html>
