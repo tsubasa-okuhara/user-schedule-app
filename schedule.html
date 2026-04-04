@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>スケジュール - 利用者アプリ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif;background:#f0f4f8;color:#333;min-height:100vh;-webkit-tap-highlight-color:transparent}
@@ -39,39 +40,43 @@
   .cal-day:nth-child(7n) .day-num{color:#2980b9}
   .day-dots{display:flex;justify-content:center;gap:2px;flex-wrap:wrap}
   .day-dot{width:5px;height:5px;border-radius:50%}
-  .dot-home{background:#4caf50}.dot-mobility{background:#2196f3}.dot-housework{background:#ff9800}.dot-hospital{background:#9c27b0}
   .section{display:none}.section.active{display:block}
   .day-detail{margin:0 12px 12px}
   .detail-header{font-size:15px;font-weight:700;padding:10px 4px 8px;display:flex;justify-content:space-between;align-items:center}
   .count-badge{font-size:12px;color:#888;font-weight:500}
   .sched-card{background:#fff;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;display:flex}
   .svc-bar{width:6px;flex-shrink:0}
-  .svc-bar.home{background:#4caf50}.svc-bar.mobility{background:#2196f3}.svc-bar.housework{background:#ff9800}.svc-bar.hospital{background:#9c27b0}
   .sched-body{flex:1;padding:12px 14px;display:flex;align-items:center;gap:10px}
   .sched-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-  .sched-icon.home{background:#e8f5e9}.sched-icon.mobility{background:#e3f2fd}.sched-icon.housework{background:#fff3e0}.sched-icon.hospital{background:#f3e5f5}
   .sched-info{flex:1;min-width:0}
   .sched-name{font-size:14px;font-weight:700;margin-bottom:1px}
   .sched-time{font-size:12px;color:#888}
   .sched-note{font-size:11px;color:#aaa;margin-top:1px}
+  .sched-helper{font-size:11px;color:#2c7a5c;margin-top:2px}
   .sched-actions{display:flex;gap:6px;flex-shrink:0}
   .act-btn{width:34px;height:34px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px}
   .act-btn:active{transform:scale(.9)}
   .act-btn.edit{background:#e3f2fd;color:#1976d2}
   .act-btn.del{background:#fce4ec;color:#c62828}
   .empty-msg{background:#fff;border-radius:12px;padding:28px;text-align:center;color:#bbb;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-  .view-toggle{display:flex;justify-content:flex-end;padding:6px 14px 0;gap:6px}
-  .view-btn{padding:4px 12px;border-radius:16px;border:1.5px solid #ccc;background:none;font-size:11px;font-weight:600;color:#999;cursor:pointer}
-  .view-btn.active{border-color:#2c7a5c;color:#2c7a5c;background:#e8f5e9}
-  .week-view{display:none;margin:8px 12px 12px}.week-view.active{display:block}
-  .week-row{display:flex;background:#fff;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden}
-  .week-day-label{width:52px;padding:10px 4px;text-align:center;font-size:12px;font-weight:700;background:#f8faf9;border-right:1px solid #eee;display:flex;flex-direction:column;align-items:center;justify-content:center}
-  .week-day-label .wnum{font-size:18px}.week-day-label .wday{font-size:10px;color:#888}
-  .week-day-label.sun .wday{color:#e74c3c}.week-day-label.sat .wday{color:#2980b9}
-  .week-items{flex:1;padding:6px 10px;display:flex;flex-direction:column;gap:4px;min-height:40px;justify-content:center}
-  .week-item{display:flex;align-items:center;gap:6px;font-size:12px}
-  .week-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-  .week-empty{font-size:12px;color:#ccc}
+  .loading-msg{text-align:center;padding:30px;color:#888;font-size:14px}
+  .loading-msg .spin{display:inline-block;width:20px;height:20px;border:3px solid #ccc;border-top-color:#2c7a5c;border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .change-container{padding:12px}
+  .change-hint{background:#e3f2fd;border-radius:10px;padding:10px 14px;font-size:13px;color:#1565c0;margin-bottom:10px;line-height:1.5}
+  .add-float-btn{position:fixed;bottom:80px;right:20px;width:56px;height:56px;border-radius:50%;background:#2c7a5c;color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 12px rgba(44,122,92,.4);z-index:50;display:none;align-items:center;justify-content:center}
+  .add-float-btn.show{display:flex}
+  .add-float-btn:active{transform:scale(.9)}
+  .request-history{margin-top:12px}.request-history h4{font-size:14px;color:#555;margin-bottom:8px}
+  .req-card{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05);display:flex;align-items:center;gap:10px}
+  .req-type-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;flex-shrink:0}
+  .req-type-badge.add{background:#e8f5e9;color:#2e7d32}
+  .req-type-badge.edit{background:#e3f2fd;color:#1565c0}
+  .req-type-badge.cancel{background:#fce4ec;color:#c62828}
+  .req-info{flex:1;font-size:13px;color:#555}
+  .req-status{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
+  .req-status.wait{background:#fff3e0;color:#e65100}
+  .req-status.approved{background:#e8f5e9;color:#2e7d32}
   .submit-container{padding:12px}
   .submit-card{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
   .submit-header{background:#f8faf9;padding:16px 18px;border-bottom:1px solid #eee}
@@ -81,7 +86,7 @@
   .info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
   .info-row:last-child{border-bottom:none}
   .info-label{color:#888;font-size:13px}
-  .info-value{font-weight:600}.info-value.warn{color:#e65100}.info-value.ok{color:#2e7d32}
+  .info-value{font-weight:600}
   .submit-status-box{margin:16px 18px;padding:14px;border-radius:12px;text-align:center;font-weight:700;font-size:15px}
   .submit-status-box.pending{background:#fff3e0;color:#e65100;border:2px dashed #ffcc80}
   .submit-status-box.done{background:#e8f5e9;color:#2e7d32;border:2px solid #a5d6a7}
@@ -92,25 +97,9 @@
   .sp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
   .sp-date{color:#888;min-width:60px}
   .submit-action{padding:0 18px 20px}
-  .submit-btn{width:100%;padding:15px;border-radius:12px;border:none;font-size:16px;font-weight:700;cursor:pointer;background:#2c7a5c;color:#fff;transition:opacity .2s}
+  .submit-btn{width:100%;padding:15px;border-radius:12px;border:none;font-size:16px;font-weight:700;cursor:pointer;background:#2c7a5c;color:#fff}
   .submit-btn:active{opacity:.8}
   .submit-btn:disabled{background:#ccc;cursor:default}
-  .change-container{padding:12px}
-  .change-hint{background:#e3f2fd;border-radius:10px;padding:10px 14px;font-size:13px;color:#1565c0;margin-bottom:10px;line-height:1.5}
-  .add-float-btn{position:fixed;bottom:80px;right:20px;width:56px;height:56px;border-radius:50%;background:#2c7a5c;color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 12px rgba(44,122,92,.4);z-index:50;display:none;align-items:center;justify-content:center}
-  .add-float-btn.show{display:flex}
-  .add-float-btn:active{transform:scale(.9)}
-  .request-history{margin-top:12px}
-  .request-history h4{font-size:14px;color:#555;margin-bottom:8px}
-  .req-card{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05);display:flex;align-items:center;gap:10px}
-  .req-type-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;flex-shrink:0}
-  .req-type-badge.add{background:#e8f5e9;color:#2e7d32}
-  .req-type-badge.edit{background:#e3f2fd;color:#1565c0}
-  .req-type-badge.cancel{background:#fce4ec;color:#c62828}
-  .req-info{flex:1;font-size:13px;color:#555}
-  .req-status{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;flex-shrink:0}
-  .req-status.wait{background:#fff3e0;color:#e65100}
-  .req-status.approved{background:#e8f5e9;color:#2e7d32}
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
   .modal-overlay.show{display:flex;animation:fadeIn .2s ease}
   .modal{background:#fff;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0));width:100%;max-width:480px;animation:slideUp .3s ease;max-height:85vh;overflow-y:auto}
@@ -141,10 +130,10 @@
 </head>
 <body>
 <div class="header">
-  <div class="header-top"><h1>スケジュール</h1><span class="user-name">山田 太郎 さん</span></div>
+  <div class="header-top"><h1>スケジュール</h1><span class="user-name" id="headerUser">--</span></div>
   <div class="month-nav">
     <button onclick="changeMonth(-1)">◀</button>
-    <span class="current-month" id="currentMonth">2026年4月</span>
+    <span class="current-month" id="currentMonth"></span>
     <button onclick="changeMonth(1)">▶</button>
   </div>
 </div>
@@ -163,38 +152,35 @@
   <div class="cal-weekdays"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>
   <div class="cal-grid" id="calGrid"></div>
 </div>
-<div class="view-toggle" id="viewToggle">
-  <button class="view-btn active" onclick="setView(this,'day')">日表示</button>
-  <button class="view-btn" onclick="setView(this,'week')">週表示</button>
-</div>
 
+<!-- 確認タブ -->
 <div class="section active" id="sec-confirm">
   <div class="day-detail" id="dayDetail">
     <div class="detail-header"><span id="detailDate"></span><span class="count-badge" id="detailCount"></span></div>
     <div id="detailList"></div>
   </div>
-  <div class="week-view" id="weekView"></div>
 </div>
 
+<!-- 提出タブ -->
 <div class="section" id="sec-submit">
   <div class="submit-container">
     <div class="submit-card">
-      <div class="submit-header"><h3>来月のスケジュール提出</h3><p id="submitTarget">2026年5月分</p></div>
+      <div class="submit-header"><h3>来月のスケジュール提出</h3><p id="submitTarget"></p></div>
       <div class="submit-info">
-        <div class="info-row"><span class="info-label">提出期限</span><span class="info-value warn" id="submitDeadline">2026年4月20日</span></div>
         <div class="info-row"><span class="info-label">予定件数</span><span class="info-value" id="submitCount">--件</span></div>
         <div class="info-row"><span class="info-label">ステータス</span><span class="info-value" id="submitStatusText">未提出</span></div>
       </div>
       <div class="submit-status-box pending" id="submitStatusBox">未提出です。内容を確認して提出してください。</div>
-      <div class="submit-list"><h4>提出スケジュール一覧</h4><div class="submit-preview" id="submitPreview"></div></div>
+      <div class="submit-list"><h4>今月のスケジュール一覧</h4><div class="submit-preview" id="submitPreview"></div></div>
       <div class="submit-action"><button class="submit-btn" id="submitBtn" onclick="openSubmitConfirm()">スケジュールを提出する</button></div>
     </div>
   </div>
 </div>
 
+<!-- 変更タブ -->
 <div class="section" id="sec-change">
   <div class="change-container">
-    <div class="change-hint">カレンダーの日付をタップして、予定の変更・キャンセル・追加ができます。右下の「＋」ボタンからも追加できます。</div>
+    <div class="change-hint">カレンダーの日付をタップして、予定の変更・キャンセルができます。右下の「＋」ボタンから追加もできます。</div>
     <div class="day-detail" id="changeDayDetail">
       <div class="detail-header"><span id="changeDetailDate"></span></div>
       <div id="changeDetailList"></div>
@@ -209,19 +195,18 @@
 <!-- モーダル: 追加 -->
 <div class="modal-overlay" id="addModal"><div class="modal">
   <h3>予定を追加する</h3>
-  <div class="form-group"><label>サービス種類</label><select id="addType"><option value="home">居宅介護</option><option value="mobility">移動支援</option><option value="housework">家事援助</option><option value="hospital">通院介助</option></select></div>
+  <div class="form-group"><label>サービス種類</label><select id="addType"><option value="居宅">居宅介護</option><option value="移動">移動支援</option><option value="家事">家事援助</option><option value="通院">通院介助</option></select></div>
   <div class="form-group"><label>日付</label><input type="date" id="addDate"></div>
   <div class="form-group"><label>開始時間</label><input type="time" id="addStart" value="09:00"></div>
   <div class="form-group"><label>終了時間</label><input type="time" id="addEnd" value="11:00"></div>
   <div class="form-group"><label>内容メモ（任意）</label><textarea id="addNote" placeholder="例：買い物に行きたい"></textarea></div>
-  <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeModal('addModal')">戻る</button><button class="modal-btn confirm" onclick="doAdd()">追加する</button></div>
+  <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeModal('addModal')">戻る</button><button class="modal-btn confirm" onclick="doAdd()">追加を申請</button></div>
 </div></div>
 
 <!-- モーダル: 変更 -->
 <div class="modal-overlay" id="editModal"><div class="modal">
   <h3>予定を変更する</h3>
   <div class="form-group"><label>サービス</label><input type="text" id="editService" readonly style="background:#f5f5f5"></div>
-  <div class="form-group"><label>日付</label><input type="date" id="editDate"></div>
   <div class="form-group"><label>開始時間</label><input type="time" id="editStart"></div>
   <div class="form-group"><label>終了時間</label><input type="time" id="editEnd"></div>
   <div class="form-group"><label>変更理由</label><textarea id="editReason" placeholder="例：通院の時間が変わったため"></textarea></div>
@@ -236,7 +221,7 @@
   <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeModal('cancelModal')">戻る</button><button class="modal-btn danger" onclick="doCancel()">キャンセルを申請</button></div>
 </div></div>
 
-<!-- モーダル: 提出確認 -->
+<!-- モーダル: 提出 -->
 <div class="modal-overlay" id="submitModal"><div class="modal">
   <h3>スケジュールを提出しますか？</h3>
   <p style="font-size:14px;color:#666;text-align:center;margin-bottom:6px" id="submitConfirmText"></p>
@@ -247,65 +232,414 @@
 <div class="toast" id="toast"></div>
 
 <nav class="bottom-nav">
-  <a class="nav-item" href="index.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-    <span>実績記録</span>
-  </a>
-  <a class="nav-item active" href="schedule.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-    <span>スケジュール</span>
-  </a>
-  <a class="nav-item" href="schedule.html" onclick="setTimeout(()=>{document.querySelectorAll('.page-tab')[2].click()},100)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg>
-    <span>設定</span>
-  </a>
-  <a class="nav-item" href="mypage.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5.5 21a8.38 8.38 0 0113 0"/></svg>
-    <span>マイページ</span>
-  </a>
+  <a class="nav-item" href="records.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg><span>実績記録</span></a>
+  <a class="nav-item active" href="schedule.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>スケジュール</span></a>
+  <a class="nav-item" href="mypage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5.5 21a8.38 8.38 0 0113 0"/></svg><span>マイページ</span></a>
 </nav>
 
 <script>
-const T={home:{name:'居宅介護',icon:'🏠',color:'#4caf50',dot:'dot-home',cls:'home'},mobility:{name:'移動支援',icon:'🚶',color:'#2196f3',dot:'dot-mobility',cls:'mobility'},housework:{name:'家事援助',icon:'🧹',color:'#ff9800',dot:'dot-housework',cls:'housework'},hospital:{name:'通院介助',icon:'🏥',color:'#9c27b0',dot:'dot-hospital',cls:'hospital'}};
-const WD=['日','月','火','水','木','金','土'];
-let data={'2026-04-01':[{type:'home',start:'09:00',end:'11:00',note:'入浴介助'},{type:'mobility',start:'14:00',end:'16:00',note:'買い物同行'}],'2026-04-03':[{type:'home',start:'09:00',end:'11:00',note:'身体介護'},{type:'hospital',start:'14:00',end:'16:00',note:'○○クリニック'}],'2026-04-05':[{type:'housework',start:'10:00',end:'12:00',note:'調理・掃除'}],'2026-04-07':[{type:'home',start:'09:00',end:'11:30',note:'入浴・排泄介助'}],'2026-04-08':[{type:'hospital',start:'13:00',end:'15:00',note:'内科通院'}],'2026-04-10':[{type:'housework',start:'10:00',end:'12:00',note:'洗濯・掃除'},{type:'home',start:'14:00',end:'16:00',note:'身体介護'}],'2026-04-12':[{type:'hospital',start:'09:00',end:'11:00',note:'歯科通院'}],'2026-04-14':[{type:'home',start:'09:00',end:'11:00',note:'入浴介助'}],'2026-04-15':[{type:'housework',start:'10:00',end:'12:00',note:'調理・買い出し'}],'2026-04-17':[{type:'home',start:'09:00',end:'11:00',note:'身体介護'},{type:'mobility',start:'14:00',end:'16:30',note:'外出支援'}],'2026-04-19':[{type:'housework',start:'10:00',end:'12:00',note:'掃除・洗濯'}],'2026-04-21':[{type:'home',start:'09:00',end:'11:00',note:'入浴介助'},{type:'hospital',start:'14:00',end:'16:00',note:'整形外科'}],'2026-04-24':[{type:'home',start:'09:00',end:'11:00',note:'身体介護'}],'2026-04-26':[{type:'mobility',start:'10:00',end:'12:30',note:'買い物同行'}],'2026-04-28':[{type:'home',start:'09:00',end:'11:00',note:'入浴・食事介助'},{type:'housework',start:'14:00',end:'16:00',note:'調理・掃除'}]};
-let requests=[{kind:'edit',date:'4/10',desc:'家事援助 10:00→11:00に変更',status:'wait'},{kind:'cancel',date:'4/8',desc:'通院介助 キャンセル',status:'approved'},{kind:'add',date:'4/22',desc:'移動支援 13:00〜15:00 追加',status:'wait'}];
-let submitted=false,cYear=2026,cMon=4,selDate='2026-04-03',curPage='confirm',curView='day',editIdx=-1,cancelIdx=-1;
+// ==========================================
+// Supabase接続
+// ==========================================
+const SUPABASE_URL = 'https://pbqqqwwgswniuomjlhsh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBicXFxd3dnc3duaXVvbWpsaHNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MTA3NTcsImV4cCI6MjA4OTI4Njc1N30.XgImGhrTc-cVHO9tvapCCz0y3XJZn3ma4vnd_QBYfDk';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ==========================================
+// サービス種類マッピング
+// ==========================================
+function taskInfo(task) {
+  if (!task) return { name:'その他', icon:'📋', color:'#888', cls:'other' };
+  const t = task.toString();
+  if (t.includes('居宅') || t.includes('身体')) return { name:'居宅介護', icon:'🏠', color:'#4caf50', cls:'home' };
+  if (t.includes('移動')) return { name:'移動支援', icon:'🚶', color:'#2196f3', cls:'mobility' };
+  if (t.includes('家事')) return { name:'家事援助', icon:'🧹', color:'#ff9800', cls:'housework' };
+  if (t.includes('通院')) return { name:'通院介助', icon:'🏥', color:'#9c27b0', cls:'hospital' };
+  return { name: t, icon:'📋', color:'#888', cls:'other' };
+}
+
+const WD = ['日','月','火','水','木','金','土'];
 function pad(n){return String(n).padStart(2,'0')}
 function ds(y,m,d){return`${y}-${pad(m)}-${pad(d)}`}
 function fmtD(s){const d=new Date(s+'T00:00:00');return`${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`}
+function fmtTime(t){if(!t)return'--:--';return t.substring(0,5)}
 function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 
-function renderCalendar(){const g=document.getElementById('calGrid');g.innerHTML='';const f=new Date(cYear,cMon-1,1),sd=f.getDay(),dim=new Date(cYear,cMon,0).getDate(),pd=new Date(cYear,cMon-1,0).getDate(),td=new Date().toISOString().slice(0,10),tc=Math.ceil((sd+dim)/7)*7;for(let i=0;i<tc;i++){let day,d2,ot=false;if(i<sd){day=pd-sd+i+1;const pm=cMon-1<1?12:cMon-1,py=cMon-1<1?cYear-1:cYear;d2=ds(py,pm,day);ot=true}else if(i-sd>=dim){day=i-sd-dim+1;const nm=cMon+1>12?1:cMon+1,ny=cMon+1>12?cYear+1:cYear;d2=ds(ny,nm,day);ot=true}else{day=i-sd+1;d2=ds(cYear,cMon,day)}const c=document.createElement('div');c.className='cal-day';if(ot)c.classList.add('other-month');if(d2===td)c.classList.add('today');if(d2===selDate)c.classList.add('selected');c.dataset.date=d2;c.onclick=()=>selectDate(d2);const n=document.createElement('div');n.className='day-num';n.textContent=day;c.appendChild(n);const dots=document.createElement('div');dots.className='day-dots';if(data[d2]){[...new Set(data[d2].map(s=>s.type))].forEach(t=>{const d=document.createElement('div');d.className='day-dot '+T[t].dot;dots.appendChild(d)})}c.appendChild(dots);g.appendChild(c)}}
+// ==========================================
+// 状態
+// ==========================================
+const clientName = sessionStorage.getItem('loggedInClient') || '';
+const displayName = sessionStorage.getItem('loggedInName') || '';
+let scheduleData = {}; // { '2026-04-01': [ {id, task, start, end, helper, summary}, ... ] }
+let cYear, cMon, selDate, curPage = 'confirm';
+let editItem = null, cancelItem = null;
+let requests = []; // ローカル管理の申請履歴
 
-function selectDate(d){selDate=d;document.querySelectorAll('.cal-day').forEach(c=>c.classList.toggle('selected',c.dataset.date===d));renderDayDetail();renderChangeDayDetail()}
-function changeMonth(dir){cMon+=dir;if(cMon<1){cMon=12;cYear--}if(cMon>12){cMon=1;cYear++}document.getElementById('currentMonth').textContent=`${cYear}年${cMon}月`;selDate=ds(cYear,cMon,1);renderCalendar();renderDayDetail();renderChangeDayDetail();renderSubmitPreview()}
+// ==========================================
+// 初期化
+// ==========================================
+async function init() {
+  if (!clientName) {
+    window.location.href = 'index.html';
+    return;
+  }
+  document.getElementById('headerUser').textContent = displayName + ' さん';
 
-function renderDayDetail(){document.getElementById('detailDate').textContent=fmtD(selDate);const items=data[selDate]||[];document.getElementById('detailCount').textContent=items.length?`${items.length}件`:'';const l=document.getElementById('detailList');if(!items.length){l.innerHTML='<div class="empty-msg">この日の予定はありません</div>';return}l.innerHTML=items.map(i=>`<div class="sched-card"><div class="svc-bar ${T[i.type].cls}"></div><div class="sched-body"><div class="sched-icon ${T[i.type].cls}">${T[i.type].icon}</div><div class="sched-info"><div class="sched-name">${T[i.type].name}</div><div class="sched-time">${i.start} 〜 ${i.end}</div>${i.note?`<div class="sched-note">${i.note}</div>`:''}</div></div></div>`).join('')}
+  const now = new Date();
+  cYear = now.getFullYear();
+  cMon = now.getMonth() + 1;
+  selDate = now.toISOString().slice(0,10);
+  document.getElementById('currentMonth').textContent = `${cYear}年${cMon}月`;
 
-function renderWeekView(){const d=new Date(selDate+'T00:00:00'),dow=d.getDay(),sun=new Date(d);sun.setDate(d.getDate()-dow);const wv=document.getElementById('weekView');let h='';for(let i=0;i<7;i++){const cd=new Date(sun);cd.setDate(sun.getDate()+i);const d2=cd.toISOString().slice(0,10),items=data[d2]||[],dc=i===0?'sun':i===6?'sat':'';h+=`<div class="week-row"><div class="week-day-label ${dc}"><span class="wnum">${cd.getDate()}</span><span class="wday">${WD[i]}</span></div><div class="week-items">`;if(items.length){items.forEach(it=>{h+=`<div class="week-item"><div class="week-dot" style="background:${T[it.type].color}"></div><span>${T[it.type].name} ${it.start}〜${it.end}</span></div>`})}else{h+='<div class="week-empty">-</div>'}h+='</div></div>'}wv.innerHTML=h}
-function setView(b,v){curView=v;document.querySelectorAll('.view-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('dayDetail').style.display=v==='day'?'block':'none';document.getElementById('weekView').classList.toggle('active',v==='week');if(v==='week')renderWeekView()}
+  await loadSchedule();
+  renderCalendar();
+  renderDayDetail();
+  renderChangeDayDetail();
+}
 
-function renderSubmitPreview(){const nm=cMon+1>12?1:cMon+1,ny=cMon+1>12?cYear+1:cYear;document.getElementById('submitTarget').textContent=`${ny}年${nm}月分`;document.getElementById('submitDeadline').textContent=`${cYear}年${cMon}月20日`;const keys=Object.keys(data).filter(k=>k.startsWith(`${cYear}-${pad(cMon)}`)).sort();let cnt=0,h='';keys.forEach(k=>{data[k].forEach(i=>{cnt++;h+=`<div class="sp-item"><div class="sp-dot" style="background:${T[i.type].color}"></div><span class="sp-date">${fmtD(k).replace(/（.+）/,'')}</span><span>${T[i.type].name} ${i.start}〜${i.end}</span></div>`})});document.getElementById('submitPreview').innerHTML=h||'<p style="color:#ccc;text-align:center;padding:12px">予定がありません</p>';document.getElementById('submitCount').textContent=cnt+'件';if(submitted){document.getElementById('submitStatusText').innerHTML='<span style="color:#2e7d32">提出済み</span>';document.getElementById('submitStatusBox').className='submit-status-box done';document.getElementById('submitStatusBox').textContent='提出済みです';document.getElementById('submitBtn').disabled=true;document.getElementById('submitBtn').textContent='提出済み'}}
-function openSubmitConfirm(){const nm=cMon+1>12?1:cMon+1,ny=cMon+1>12?cYear+1:cYear;document.getElementById('submitConfirmText').textContent=`${ny}年${nm}月分のスケジュールを提出します`;document.getElementById('submitModal').classList.add('show')}
-function doSubmit(){closeModal('submitModal');submitted=true;renderSubmitPreview();toast('スケジュールを提出しました')}
+// ==========================================
+// データ取得
+// ==========================================
+async function loadSchedule() {
+  const startDate = ds(cYear, cMon, 1);
+  const endDate = ds(cYear, cMon, new Date(cYear, cMon, 0).getDate());
 
-function renderChangeDayDetail(){document.getElementById('changeDetailDate').textContent=fmtD(selDate);const items=data[selDate]||[],l=document.getElementById('changeDetailList');if(!items.length){l.innerHTML='<div class="empty-msg">この日の予定はありません</div>';return}l.innerHTML=items.map((i,idx)=>`<div class="sched-card"><div class="svc-bar ${T[i.type].cls}"></div><div class="sched-body"><div class="sched-icon ${T[i.type].cls}">${T[i.type].icon}</div><div class="sched-info"><div class="sched-name">${T[i.type].name}</div><div class="sched-time">${i.start} 〜 ${i.end}</div>${i.note?`<div class="sched-note">${i.note}</div>`:''}</div><div class="sched-actions"><button class="act-btn edit" onclick="openEditModal(${idx})">✎</button><button class="act-btn del" onclick="openCancelModal(${idx})">✕</button></div></div></div>`).join('')}
-function renderRequests(){document.getElementById('requestList').innerHTML=requests.map(r=>`<div class="req-card"><span class="req-type-badge ${r.kind}">${r.kind==='add'?'追加':r.kind==='edit'?'変更':'取消'}</span><span class="req-info">${r.date} ${r.desc}</span><span class="req-status ${r.status}">${r.status==='wait'?'申請中':'承認済'}</span></div>`).join('')}
+  try {
+    const { data, error } = await sb
+      .from('schedule_web_v')
+      .select('*')
+      .eq('client', clientName)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date')
+      .order('start_time');
 
-function openAddModal(){document.getElementById('addDate').value=selDate;document.getElementById('addNote').value='';document.getElementById('addStart').value='09:00';document.getElementById('addEnd').value='11:00';document.getElementById('addModal').classList.add('show')}
-function doAdd(){const type=document.getElementById('addType').value,date=document.getElementById('addDate').value,start=document.getElementById('addStart').value,end=document.getElementById('addEnd').value,note=document.getElementById('addNote').value;if(!date||!start||!end){toast('入力してください');return}if(!data[date])data[date]=[];data[date].push({type,start,end,note});data[date].sort((a,b)=>a.start.localeCompare(b.start));requests.unshift({kind:'add',date:fmtD(date).replace(/（.+）/,''),desc:`${T[type].name} ${start}〜${end} 追加`,status:'wait'});selDate=date;renderCalendar();renderDayDetail();renderChangeDayDetail();renderRequests();renderSubmitPreview();closeModal('addModal');toast('予定を追加しました')}
+    if (error) throw error;
 
-function openEditModal(idx){editIdx=idx;const i=data[selDate][idx];document.getElementById('editService').value=T[i.type].name;document.getElementById('editDate').value=selDate;document.getElementById('editStart').value=i.start;document.getElementById('editEnd').value=i.end;document.getElementById('editReason').value='';document.getElementById('editModal').classList.add('show')}
-function doEdit(){if(editIdx<0)return;const item=data[selDate][editIdx],ns=document.getElementById('editStart').value,ne=document.getElementById('editEnd').value,nd=document.getElementById('editDate').value;if(nd!==selDate){const moved=data[selDate].splice(editIdx,1)[0];if(!data[selDate].length)delete data[selDate];moved.start=ns;moved.end=ne;if(!data[nd])data[nd]=[];data[nd].push(moved);data[nd].sort((a,b)=>a.start.localeCompare(b.start))}else{item.start=ns;item.end=ne}requests.unshift({kind:'edit',date:fmtD(nd).replace(/（.+）/,''),desc:`${T[item.type].name} ${ns}〜${ne}に変更`,status:'wait'});if(nd!==selDate)selDate=nd;renderCalendar();renderDayDetail();renderChangeDayDetail();renderRequests();renderSubmitPreview();closeModal('editModal');toast('変更を申請しました')}
+    scheduleData = {};
+    if (data) {
+      data.forEach(row => {
+        const d = row.date;
+        if (!scheduleData[d]) scheduleData[d] = [];
+        scheduleData[d].push({
+          id: row.id,
+          task: row.task || row.summary || '',
+          start: fmtTime(row.start_time),
+          end: fmtTime(row.end_time),
+          helper: row.name || '',
+          summary: row.summary || '',
+          haisha: row.haisha || ''
+        });
+      });
+    }
+  } catch (ex) {
+    console.error('データ取得エラー:', ex);
+    toast('データの取得に失敗しました');
+  }
+}
 
-function openCancelModal(idx){cancelIdx=idx;const i=data[selDate][idx];document.getElementById('cancelDetail').innerHTML=`${fmtD(selDate)}<br>${T[i.type].name}　${i.start}〜${i.end}${i.note?'<br>'+i.note:''}`;document.getElementById('cancelReason').value='';document.getElementById('cancelModal').classList.add('show')}
-function doCancel(){if(cancelIdx<0)return;const i=data[selDate][cancelIdx];requests.unshift({kind:'cancel',date:fmtD(selDate).replace(/（.+）/,''),desc:`${T[i.type].name} キャンセル`,status:'wait'});data[selDate].splice(cancelIdx,1);if(!data[selDate].length)delete data[selDate];renderCalendar();renderDayDetail();renderChangeDayDetail();renderRequests();renderSubmitPreview();closeModal('cancelModal');toast('キャンセルを申請しました')}
+// ==========================================
+// カレンダー描画
+// ==========================================
+function renderCalendar() {
+  const g = document.getElementById('calGrid');
+  g.innerHTML = '';
+  const f = new Date(cYear, cMon-1, 1);
+  const sd = f.getDay();
+  const dim = new Date(cYear, cMon, 0).getDate();
+  const pd = new Date(cYear, cMon-1, 0).getDate();
+  const td = new Date().toISOString().slice(0,10);
+  const tc = Math.ceil((sd+dim)/7)*7;
 
-function switchPage(tab,page){curPage=page;document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('sec-'+page).classList.add('active');document.getElementById('viewToggle').style.display=page==='confirm'?'flex':'none';document.getElementById('fabAdd').classList.toggle('show',page==='change');if(page==='submit')renderSubmitPreview();if(page==='change'){renderChangeDayDetail();renderRequests()}}
+  for (let i = 0; i < tc; i++) {
+    let day, d2, ot = false;
+    if (i < sd) { day=pd-sd+i+1; const pm=cMon-1<1?12:cMon-1,py=cMon-1<1?cYear-1:cYear; d2=ds(py,pm,day); ot=true; }
+    else if (i-sd >= dim) { day=i-sd-dim+1; const nm=cMon+1>12?1:cMon+1,ny=cMon+1>12?cYear+1:cYear; d2=ds(ny,nm,day); ot=true; }
+    else { day=i-sd+1; d2=ds(cYear,cMon,day); }
 
-renderCalendar();renderDayDetail();renderChangeDayDetail();renderRequests();renderSubmitPreview();
+    const c = document.createElement('div');
+    c.className = 'cal-day';
+    if (ot) c.classList.add('other-month');
+    if (d2===td) c.classList.add('today');
+    if (d2===selDate) c.classList.add('selected');
+    c.dataset.date = d2;
+    c.onclick = () => selectDate(d2);
+
+    const n = document.createElement('div');
+    n.className = 'day-num';
+    n.textContent = day;
+    c.appendChild(n);
+
+    const dots = document.createElement('div');
+    dots.className = 'day-dots';
+    if (scheduleData[d2]) {
+      const types = [...new Set(scheduleData[d2].map(s => taskInfo(s.task).cls))];
+      types.forEach(cls => {
+        const d = document.createElement('div');
+        d.className = 'day-dot';
+        const colors = {home:'#4caf50',mobility:'#2196f3',housework:'#ff9800',hospital:'#9c27b0',other:'#888'};
+        d.style.background = colors[cls] || '#888';
+        dots.appendChild(d);
+      });
+    }
+    c.appendChild(dots);
+    g.appendChild(c);
+  }
+}
+
+function selectDate(d) {
+  selDate = d;
+  document.querySelectorAll('.cal-day').forEach(c => c.classList.toggle('selected', c.dataset.date===d));
+  renderDayDetail();
+  renderChangeDayDetail();
+}
+
+async function changeMonth(dir) {
+  cMon += dir;
+  if (cMon<1){cMon=12;cYear--} if(cMon>12){cMon=1;cYear++}
+  document.getElementById('currentMonth').textContent = `${cYear}年${cMon}月`;
+  selDate = ds(cYear, cMon, 1);
+  await loadSchedule();
+  renderCalendar();
+  renderDayDetail();
+  renderChangeDayDetail();
+}
+
+// ==========================================
+// 確認タブ: 日別詳細
+// ==========================================
+function renderDayDetail() {
+  document.getElementById('detailDate').textContent = fmtD(selDate);
+  const items = scheduleData[selDate] || [];
+  document.getElementById('detailCount').textContent = items.length ? `${items.length}件` : '';
+  const l = document.getElementById('detailList');
+  if (!items.length) { l.innerHTML = '<div class="empty-msg">この日の予定はありません</div>'; return; }
+  l.innerHTML = items.map(i => {
+    const ti = taskInfo(i.task);
+    return `<div class="sched-card">
+      <div class="svc-bar" style="background:${ti.color}"></div>
+      <div class="sched-body">
+        <div class="sched-icon" style="background:${ti.color}20">${ti.icon}</div>
+        <div class="sched-info">
+          <div class="sched-name">${ti.name}</div>
+          <div class="sched-time">${i.start} 〜 ${i.end}</div>
+          ${i.helper ? `<div class="sched-helper">担当: ${i.helper}</div>` : ''}
+          ${i.summary ? `<div class="sched-note">${i.summary}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ==========================================
+// 変更タブ
+// ==========================================
+function renderChangeDayDetail() {
+  document.getElementById('changeDetailDate').textContent = fmtD(selDate);
+  const items = scheduleData[selDate] || [];
+  const l = document.getElementById('changeDetailList');
+  if (!items.length) { l.innerHTML = '<div class="empty-msg">この日の予定はありません</div>'; return; }
+  l.innerHTML = items.map((i, idx) => {
+    const ti = taskInfo(i.task);
+    return `<div class="sched-card">
+      <div class="svc-bar" style="background:${ti.color}"></div>
+      <div class="sched-body">
+        <div class="sched-icon" style="background:${ti.color}20">${ti.icon}</div>
+        <div class="sched-info">
+          <div class="sched-name">${ti.name}</div>
+          <div class="sched-time">${i.start} 〜 ${i.end}</div>
+          ${i.helper ? `<div class="sched-helper">担当: ${i.helper}</div>` : ''}
+        </div>
+        <div class="sched-actions">
+          <button class="act-btn edit" onclick="openEditModal('${selDate}',${idx})">✎</button>
+          <button class="act-btn del" onclick="openCancelModal('${selDate}',${idx})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRequests() {
+  const l = document.getElementById('requestList');
+  if (!requests.length) { l.innerHTML = '<div class="empty-msg">申請履歴はありません</div>'; return; }
+  l.innerHTML = requests.map(r => `<div class="req-card">
+    <span class="req-type-badge ${r.kind}">${r.kind==='add'?'追加':r.kind==='edit'?'変更':'取消'}</span>
+    <span class="req-info">${r.desc}</span>
+    <span class="req-status wait">申請中</span>
+  </div>`).join('');
+}
+
+// ==========================================
+// 追加
+// ==========================================
+function openAddModal() {
+  document.getElementById('addDate').value = selDate;
+  document.getElementById('addNote').value = '';
+  document.getElementById('addModal').classList.add('show');
+}
+
+async function doAdd() {
+  const type = document.getElementById('addType').value;
+  const date = document.getElementById('addDate').value;
+  const start = document.getElementById('addStart').value;
+  const end = document.getElementById('addEnd').value;
+  const note = document.getElementById('addNote').value;
+  if (!date||!start||!end) { toast('入力してください'); return; }
+
+  try {
+    const { error } = await sb.from('schedule').insert({
+      date: date,
+      client: clientName,
+      task: type,
+      summary: type,
+      start_time: start,
+      end_time: end,
+      name: '担当未設定',
+      beneficiary_number: sessionStorage.getItem('beneficiaryNumber') || null
+    });
+    if (error) throw error;
+
+    requests.unshift({ kind:'add', desc:`${fmtD(date)} ${type} ${start}〜${end}` });
+    selDate = date;
+    await loadSchedule();
+    renderCalendar();
+    renderDayDetail();
+    renderChangeDayDetail();
+    renderRequests();
+    closeModal('addModal');
+    toast('予定を追加しました');
+  } catch (ex) {
+    console.error(ex);
+    toast('追加に失敗しました');
+  }
+}
+
+// ==========================================
+// 変更
+// ==========================================
+function openEditModal(date, idx) {
+  editItem = scheduleData[date][idx];
+  const ti = taskInfo(editItem.task);
+  document.getElementById('editService').value = ti.name;
+  document.getElementById('editStart').value = editItem.start;
+  document.getElementById('editEnd').value = editItem.end;
+  document.getElementById('editReason').value = '';
+  document.getElementById('editModal').classList.add('show');
+}
+
+async function doEdit() {
+  if (!editItem) return;
+  const ns = document.getElementById('editStart').value;
+  const ne = document.getElementById('editEnd').value;
+
+  try {
+    const { error } = await sb.from('schedule')
+      .update({ start_time: ns, end_time: ne })
+      .eq('id', editItem.id);
+    if (error) throw error;
+
+    const ti = taskInfo(editItem.task);
+    requests.unshift({ kind:'edit', desc:`${fmtD(selDate)} ${ti.name} ${ns}〜${ne}に変更` });
+    await loadSchedule();
+    renderCalendar();
+    renderDayDetail();
+    renderChangeDayDetail();
+    renderRequests();
+    closeModal('editModal');
+    toast('変更しました');
+  } catch (ex) {
+    console.error(ex);
+    toast('変更に失敗しました');
+  }
+}
+
+// ==========================================
+// キャンセル
+// ==========================================
+function openCancelModal(date, idx) {
+  cancelItem = scheduleData[date][idx];
+  const ti = taskInfo(cancelItem.task);
+  document.getElementById('cancelDetail').innerHTML =
+    `${fmtD(date)}<br>${ti.name}　${cancelItem.start}〜${cancelItem.end}${cancelItem.helper?'<br>担当: '+cancelItem.helper:''}`;
+  document.getElementById('cancelReason').value = '';
+  document.getElementById('cancelModal').classList.add('show');
+}
+
+async function doCancel() {
+  if (!cancelItem) return;
+  try {
+    const { error } = await sb.from('schedule')
+      .delete()
+      .eq('id', cancelItem.id);
+    if (error) throw error;
+
+    const ti = taskInfo(cancelItem.task);
+    requests.unshift({ kind:'cancel', desc:`${fmtD(selDate)} ${ti.name} キャンセル` });
+    await loadSchedule();
+    renderCalendar();
+    renderDayDetail();
+    renderChangeDayDetail();
+    renderRequests();
+    closeModal('cancelModal');
+    toast('キャンセルしました');
+  } catch (ex) {
+    console.error(ex);
+    toast('キャンセルに失敗しました');
+  }
+}
+
+// ==========================================
+// 提出
+// ==========================================
+function renderSubmitPreview() {
+  const nm=cMon+1>12?1:cMon+1, ny=cMon+1>12?cYear+1:cYear;
+  document.getElementById('submitTarget').textContent = `${ny}年${nm}月分`;
+  const keys = Object.keys(scheduleData).sort();
+  let cnt = 0, h = '';
+  keys.forEach(k => {
+    scheduleData[k].forEach(i => {
+      cnt++;
+      const ti = taskInfo(i.task);
+      h += `<div class="sp-item"><div class="sp-dot" style="background:${ti.color}"></div><span class="sp-date">${fmtD(k).replace(/（.+）/,'')}</span><span>${ti.name} ${i.start}〜${i.end}</span></div>`;
+    });
+  });
+  document.getElementById('submitPreview').innerHTML = h || '<p style="color:#ccc;text-align:center;padding:12px">予定がありません</p>';
+  document.getElementById('submitCount').textContent = cnt + '件';
+}
+
+function openSubmitConfirm() {
+  const nm=cMon+1>12?1:cMon+1, ny=cMon+1>12?cYear+1:cYear;
+  document.getElementById('submitConfirmText').textContent = `${ny}年${nm}月分のスケジュールを提出します`;
+  document.getElementById('submitModal').classList.add('show');
+}
+
+function doSubmit() {
+  closeModal('submitModal');
+  document.getElementById('submitStatusText').innerHTML = '<span style="color:#2e7d32">提出済み</span>';
+  document.getElementById('submitStatusBox').className = 'submit-status-box done';
+  document.getElementById('submitStatusBox').textContent = '提出済みです';
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').textContent = '提出済み';
+  toast('スケジュールを提出しました');
+}
+
+// ==========================================
+// ページ切替
+// ==========================================
+function switchPage(tab, page) {
+  curPage = page;
+  document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+page).classList.add('active');
+  document.getElementById('fabAdd').classList.toggle('show', page==='change');
+  if (page==='submit') renderSubmitPreview();
+  if (page==='change') { renderChangeDayDetail(); renderRequests(); }
+}
+
+// 初期化
+init();
 </script>
 </body>
 </html>
