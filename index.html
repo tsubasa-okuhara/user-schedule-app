@@ -58,12 +58,12 @@
         </div>
       </div>
       <div class="form-group">
-        <label>受給者番号（下4桁）</label>
+        <label>ログインコード（4桁）</label>
         <div class="input-wrap">
           <span class="icon">🔑</span>
           <input type="tel" id="userCode" placeholder="例：1234" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" required>
         </div>
-        <div class="input-hint">受給者証に記載の番号の下4桁を入力してください</div>
+        <div class="input-hint">事業所から発行された4桁のコードを入力してください</div>
       </div>
       <button type="submit" class="login-btn" id="loginBtn">
         <span class="btn-text">ログイン</span>
@@ -93,7 +93,7 @@ async function doLogin(e) {
   err.classList.remove('show');
 
   if (!name || code.length !== 4) {
-    err.textContent = '利用者名と受給者番号（4桁）を入力してください';
+    err.textContent = '利用者名とログインコード（4桁）を入力してください';
     err.classList.add('show');
     return;
   }
@@ -102,41 +102,28 @@ async function doLogin(e) {
   btn.disabled = true;
 
   try {
-    // schedule_web_vからclient名に含まれる名前で検索し、受給者番号の下4桁で認証
-    // clientは「山田太郎様」のように「様」付きの場合があるので部分一致で検索
+    // client_usersテーブルで名前（部分一致）＋ログインコードで認証
     const { data, error } = await supabase
-      .from('schedule_web_v')
-      .select('client, beneficiary_number')
-      .ilike('client', `%${name}%`)
-      .not('beneficiary_number', 'is', null)
-      .limit(10);
+      .from('client_users')
+      .select('id, client_name, beneficiary_number, login_code, service_types')
+      .eq('is_active', true)
+      .ilike('client_name', `%${name}%`)
+      .eq('login_code', code)
+      .limit(1);
 
     if (error) throw error;
 
-    // 受給者番号の下4桁が一致するか確認
-    let matchedClient = null;
-    let matchedBenNumber = null;
     if (data && data.length > 0) {
-      for (const row of data) {
-        if (row.beneficiary_number) {
-          const bn = String(row.beneficiary_number);
-          if (bn.slice(-4) === code) {
-            matchedClient = row.client;
-            matchedBenNumber = row.beneficiary_number;
-            break;
-          }
-        }
-      }
-    }
-
-    if (matchedClient) {
+      const user = data[0];
       // ログイン成功 - sessionStorageに保存
-      sessionStorage.setItem('loggedInClient', matchedClient);
+      sessionStorage.setItem('clientUserId', user.id);
+      sessionStorage.setItem('loggedInClient', user.client_name);
       sessionStorage.setItem('loggedInName', name);
-      sessionStorage.setItem('beneficiaryNumber', matchedBenNumber);
+      sessionStorage.setItem('beneficiaryNumber', user.beneficiary_number || '');
+      sessionStorage.setItem('serviceTypes', JSON.stringify(user.service_types || []));
       window.location.href = 'schedule.html';
     } else {
-      err.textContent = '利用者名または受給者番号が正しくありません';
+      err.textContent = '利用者名またはログインコードが正しくありません';
       err.classList.add('show');
       btn.classList.remove('loading');
       btn.disabled = false;

@@ -307,7 +307,7 @@ async function loadSchedule() {
 
   try {
     const { data, error } = await sb
-      .from('schedule_web_v')
+      .from('schedule')
       .select('*')
       .eq('client', clientName)
       .gte('date', startDate)
