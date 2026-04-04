@@ -78,7 +78,7 @@
 <script>
 const SUPABASE_URL = 'https://pbqqqwwgswniuomjlhsh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBicXFxd3dnc3duaXVvbWpsaHNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MTA3NTcsImV4cCI6MjA4OTI4Njc1N30.XgImGhrTc-cVHO9tvapCCz0y3XJZn3ma4vnd_QBYfDk';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.getElementById('userCode').addEventListener('input', function(){
   this.value = this.value.replace(/[^0-9]/g,'');
@@ -104,7 +104,7 @@ async function doLogin(e) {
   try {
     console.log('ログイン試行:', name, code);
     // client_usersテーブルで名前（部分一致）＋ログインコードで認証
-    const { data, error } = await supabase
+    const { data, error } = await sb
       .from('client_users')
       .select('id, client_name, beneficiary_number, login_code, service_types')
       .eq('is_active', true)
