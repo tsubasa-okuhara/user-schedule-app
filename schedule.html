@@ -100,6 +100,13 @@
   .submit-btn{width:100%;padding:15px;border-radius:12px;border:none;font-size:16px;font-weight:700;cursor:pointer;background:#2c7a5c;color:#fff}
   .submit-btn:active{opacity:.8}
   .submit-btn:disabled{background:#ccc;cursor:default}
+  .submit-add-btn{width:100%;padding:14px;border:2px dashed #2c7a5c;border-radius:12px;background:none;color:#2c7a5c;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px}
+  .submit-add-btn:active{background:#e8f5e9}
+  .submit-entry{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-radius:10px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .submit-entry-info{flex:1}
+  .submit-entry-type{font-size:13px;font-weight:700}
+  .submit-entry-time{font-size:12px;color:#888}
+  .submit-entry-del{width:30px;height:30px;border-radius:50%;border:none;background:#fce4ec;color:#c62828;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
   .modal-overlay.show{display:flex;animation:fadeIn .2s ease}
   .modal{background:#fff;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0));width:100%;max-width:480px;animation:slideUp .3s ease;max-height:85vh;overflow-y:auto}
@@ -165,14 +172,11 @@
 <div class="section" id="sec-submit">
   <div class="submit-container">
     <div class="submit-card">
-      <div class="submit-header"><h3>来月のスケジュール提出</h3><p id="submitTarget"></p></div>
-      <div class="submit-info">
-        <div class="info-row"><span class="info-label">予定件数</span><span class="info-value" id="submitCount">--件</span></div>
-        <div class="info-row"><span class="info-label">ステータス</span><span class="info-value" id="submitStatusText">未提出</span></div>
-      </div>
-      <div class="submit-status-box pending" id="submitStatusBox">未提出です。内容を確認して提出してください。</div>
-      <div class="submit-list"><h4>今月のスケジュール一覧</h4><div class="submit-preview" id="submitPreview"></div></div>
-      <div class="submit-action"><button class="submit-btn" id="submitBtn" onclick="openSubmitConfirm()">スケジュールを提出する</button></div>
+      <div class="submit-header"><h3>来月のスケジュール希望提出</h3><p id="submitTarget"></p></div>
+      <button class="submit-add-btn" onclick="openSubmitAddModal()">＋ 希望日時を追加</button>
+      <div class="submit-list" style="padding:0 18px 12px"><h4 style="font-size:14px;color:#555;margin-bottom:8px;padding-top:8px;border-top:1px solid #f0f0f0">追加済みの希望一覧</h4><div class="submit-preview" id="submitPreview"></div></div>
+      <div class="submit-info" style="padding:8px 18px 12px"><div class="info-row" style="border-bottom:none;padding:6px 0"><span class="info-label">件数</span><span class="info-value" id="submitEntryCount">0件</span></div></div>
+      <div class="submit-action"><button class="submit-btn" id="submitBtn" onclick="doSubmit()">提出する</button></div>
     </div>
   </div>
 </div>
@@ -201,6 +205,17 @@
   <div class="form-group"><label>終了時間</label><input type="time" id="addEnd" value="11:00"></div>
   <div class="form-group"><label>内容メモ（任意）</label><textarea id="addNote" placeholder="例：買い物に行きたい"></textarea></div>
   <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeModal('addModal')">戻る</button><button class="modal-btn confirm" onclick="doAdd()">追加を申請</button></div>
+</div></div>
+
+<!-- モーダル: 提出用追加 -->
+<div class="modal-overlay" id="submitAddModal"><div class="modal">
+  <h3>希望日時を追加する</h3>
+  <div class="form-group"><label>サービス種類</label><select id="submitAddType"><option value="居宅">居宅介護</option><option value="移動">移動支援</option><option value="家事">家事援助</option><option value="通院">通院介助</option></select></div>
+  <div class="form-group"><label>日付</label><input type="date" id="submitAddDate"></div>
+  <div class="form-group"><label>開始時間</label><input type="time" id="submitAddStart" value="09:00"></div>
+  <div class="form-group"><label>終了時間</label><input type="time" id="submitAddEnd" value="11:00"></div>
+  <div class="form-group"><label>内容メモ（任意）</label><textarea id="submitAddNote" placeholder="例：買い物に行きたい"></textarea></div>
+  <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeModal('submitAddModal')">戻る</button><button class="modal-btn confirm" onclick="doSubmitAdd()">追加する</button></div>
 </div></div>
 
 <!-- モーダル: 変更 -->
@@ -275,6 +290,7 @@ let scheduleData = {}; // { '2026-04-01': [ {id, task, start, end, helper, summa
 let cYear, cMon, selDate, curPage = 'confirm';
 let editItem = null, cancelItem = null;
 let requests = []; // ローカル管理の申請履歴
+let submitEntries = []; // { type, date, start, end, note }
 
 // ==========================================
 // 初期化
@@ -595,33 +611,73 @@ async function doCancel() {
 function renderSubmitPreview() {
   const nm=cMon+1>12?1:cMon+1, ny=cMon+1>12?cYear+1:cYear;
   document.getElementById('submitTarget').textContent = `${ny}年${nm}月分`;
-  const keys = Object.keys(scheduleData).sort();
-  let cnt = 0, h = '';
-  keys.forEach(k => {
-    scheduleData[k].forEach(i => {
-      cnt++;
-      const ti = taskInfo(i.task);
-      h += `<div class="sp-item"><div class="sp-dot" style="background:${ti.color}"></div><span class="sp-date">${fmtD(k).replace(/（.+）/,'')}</span><span>${ti.name} ${i.start}〜${i.end}</span></div>`;
-    });
-  });
-  document.getElementById('submitPreview').innerHTML = h || '<p style="color:#ccc;text-align:center;padding:12px">予定がありません</p>';
-  document.getElementById('submitCount').textContent = cnt + '件';
+  const sorted = [...submitEntries].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let h = '';
+  if (!sorted.length) {
+    h = '<p style="color:#ccc;text-align:center;padding:12px">＋ボタンから希望日時を追加してください</p>';
+  } else {
+    h = sorted.map((e,idx)=>{
+      const ti = taskInfo(e.type);
+      return `<div class="submit-entry"><div class="submit-entry-info"><div class="submit-entry-type">${ti.name}</div><div class="submit-entry-time">${fmtD(e.date).replace(/（.+）/,'')} ${e.start}〜${e.end}</div></div><button class="submit-entry-del" onclick="removeSubmitEntry(${idx})">✕</button></div>`;
+    }).join('');
+  }
+  document.getElementById('submitPreview').innerHTML = h;
+  document.getElementById('submitEntryCount').textContent = sorted.length + '件';
 }
 
-function openSubmitConfirm() {
+function openSubmitAddModal() {
   const nm=cMon+1>12?1:cMon+1, ny=cMon+1>12?cYear+1:cYear;
-  document.getElementById('submitConfirmText').textContent = `${ny}年${nm}月分のスケジュールを提出します`;
-  document.getElementById('submitModal').classList.add('show');
+  const nextMonthFirst = ds(ny, nm, 1);
+  document.getElementById('submitAddType').value = '居宅';
+  document.getElementById('submitAddDate').value = nextMonthFirst;
+  document.getElementById('submitAddStart').value = '09:00';
+  document.getElementById('submitAddEnd').value = '11:00';
+  document.getElementById('submitAddNote').value = '';
+  document.getElementById('submitAddModal').classList.add('show');
 }
 
-function doSubmit() {
-  closeModal('submitModal');
-  document.getElementById('submitStatusText').innerHTML = '<span style="color:#2e7d32">提出済み</span>';
-  document.getElementById('submitStatusBox').className = 'submit-status-box done';
-  document.getElementById('submitStatusBox').textContent = '提出済みです';
-  document.getElementById('submitBtn').disabled = true;
-  document.getElementById('submitBtn').textContent = '提出済み';
-  toast('スケジュールを提出しました');
+function doSubmitAdd() {
+  const type = document.getElementById('submitAddType').value;
+  const date = document.getElementById('submitAddDate').value;
+  const start = document.getElementById('submitAddStart').value;
+  const end = document.getElementById('submitAddEnd').value;
+  const note = document.getElementById('submitAddNote').value;
+  if (!date||!start||!end) { toast('日付と時間を入力してください'); return; }
+  submitEntries.push({ type, date, start, end, note });
+  renderSubmitPreview();
+  closeModal('submitAddModal');
+  toast('希望を追加しました');
+}
+
+function removeSubmitEntry(idx) {
+  submitEntries.splice(idx, 1);
+  renderSubmitPreview();
+}
+
+async function doSubmit() {
+  if (!submitEntries.length) { toast('希望を追加してください'); return; }
+  try {
+    for (const e of submitEntries) {
+      await sb.from('schedule').insert({
+        date: e.date,
+        client: clientName,
+        task: e.type,
+        summary: e.type,
+        start_time: e.start,
+        end_time: e.end,
+        name: '担当未設定',
+        beneficiary_number: sessionStorage.getItem('beneficiaryNumber') || null
+      });
+    }
+    submitEntries = [];
+    renderSubmitPreview();
+    const nm=cMon+1>12?1:cMon+1, ny=cMon+1>12?cYear+1:cYear;
+    await loadSchedule();
+    toast(`${ny}年${nm}月のスケジュールを提出しました`);
+  } catch (ex) {
+    console.error(ex);
+    toast('提出に失敗しました');
+  }
 }
 
 // ==========================================
