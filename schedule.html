@@ -657,26 +657,29 @@ function removeSubmitEntry(idx) {
 async function doSubmit() {
   if (!submitEntries.length) { toast('希望を追加してください'); return; }
   try {
-    for (const e of submitEntries) {
-      await sb.from('schedule').insert({
-        date: e.date,
-        client: clientName,
-        task: e.type,
-        summary: e.type,
-        start_time: e.start,
-        end_time: e.end,
-        name: '担当未設定',
-        beneficiary_number: sessionStorage.getItem('beneficiaryNumber') || null
-      });
-    }
+    const rows = submitEntries.map(e => ({
+      date: e.date,
+      client: clientName,
+      task: e.type,
+      summary: e.note || e.type,
+      start_time: e.start,
+      end_time: e.end,
+      name: '担当未設定',
+      beneficiary_number: sessionStorage.getItem('beneficiaryNumber') || null
+    }));
+    console.log('提出データ:', rows);
+    const { data, error } = await sb.from('schedule').insert(rows);
+    console.log('提出結果:', { data, error });
+    if (error) throw error;
     submitEntries = [];
     renderSubmitPreview();
     const nm=cMon+1>12?1:cMon+1, ny=cMon+1>12?cYear+1:cYear;
     await loadSchedule();
+    renderCalendar();
     toast(`${ny}年${nm}月のスケジュールを提出しました`);
   } catch (ex) {
-    console.error(ex);
-    toast('提出に失敗しました');
+    console.error('提出エラー:', ex);
+    toast('提出に失敗しました: ' + (ex.message || ex));
   }
 }
 
