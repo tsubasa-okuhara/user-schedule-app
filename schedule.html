@@ -261,6 +261,39 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ==========================================
+// GAS Web App連携（スプレッドシート同期）
+// ==========================================
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxlYmQHfINWY2szN_S1XBPhiYaj9-7ocLtE5l2w2pagr4ajdp9pytF5NsFQOY_vz6Px/exec';
+
+async function syncToSheet(payload) {
+  if (!GAS_WEB_APP_URL) { console.log('GAS URL未設定 - スプレッドシート同期スキップ'); return; }
+  try {
+    console.log('スプレッドシート同期:', payload);
+    const res = await fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      redirect: 'follow'
+    });
+    const text = await res.text();
+    console.log('スプレッドシート同期結果:', text);
+  } catch (ex) {
+    // CORSエラーの場合はno-corsで再送
+    try {
+      await fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+      console.log('スプレッドシート同期（no-cors fallback）送信');
+    } catch (ex2) {
+      console.warn('スプレッドシート同期エラー（操作自体は成功）:', ex2);
+    }
+  }
+}
+
+// ==========================================
 // サービス種類マッピング
 // ==========================================
 function taskInfo(task) {
@@ -296,7 +329,10 @@ let submitEntries = []; // { type, date, start, end, note }
 // 初期化
 // ==========================================
 async function init() {
+  console.log('=== schedule.html init開始 ===');
+  console.log('clientName:', clientName, 'displayName:', displayName);
   if (!clientName) {
+    console.log('未ログイン → index.htmlへリダイレクト');
     window.location.href = 'index.html';
     return;
   }
@@ -307,11 +343,13 @@ async function init() {
   cMon = now.getMonth() + 1;
   selDate = now.toISOString().slice(0,10);
   document.getElementById('currentMonth').textContent = `${cYear}年${cMon}月`;
+  console.log('表示月:', cYear, '年', cMon, '月');
 
   await loadSchedule();
   renderCalendar();
   renderDayDetail();
   renderChangeDayDetail();
+  console.log('=== schedule.html init完了 ===');
 }
 
 // ==========================================
@@ -504,7 +542,7 @@ async function doAdd() {
   if (!date||!start||!end) { toast('入力してください'); return; }
 
   try {
-    const { error } = await sb.from('schedule').insert({
+    const row = {
       date: date,
       client: clientName,
       task: type,
@@ -513,8 +551,20 @@ async function doAdd() {
       end_time: end,
       name: '担当未設定',
       beneficiary_number: sessionStorage.getItem('beneficiaryNumber') || null
-    });
+    };
+    console.log('doAdd挿入データ:', JSON.stringify(row));
+    const { data, error } = await sb.from('schedule').insert(row).select('id');
+    console.log('doAdd結果:', JSON.stringify({ data, error }));
     if (error) throw error;
+
+    // スプレッドシート同期
+    const insertedId = data && data[0] ? data[0].id : null;
+    syncToSheet({
+      action: 'add', supabaseId: insertedId, date: date,
+      helper: '担当未設定', client: clientName,
+      startTime: start, endTime: end, task: type, summary: type,
+      beneficiaryNumber: sessionStorage.getItem('beneficiaryNumber') || ''
+    });
 
     requests.unshift({ kind:'add', desc:`${fmtD(date)} ${type} ${start}〜${end}` });
     selDate = date;
@@ -548,12 +598,20 @@ async function doEdit() {
   if (!editItem) return;
   const ns = document.getElementById('editStart').value;
   const ne = document.getElementById('editEnd').value;
+  const oldStart = editItem.start; // 変更前の開始時間
 
   try {
     const { error } = await sb.from('schedule')
       .update({ start_time: ns, end_time: ne })
       .eq('id', editItem.id);
     if (error) throw error;
+
+    // スプレッドシート同期
+    syncToSheet({
+      action: 'edit', supabaseId: editItem.id, date: selDate,
+      client: clientName, oldStartTime: oldStart,
+      startTime: ns, endTime: ne
+    });
 
     const ti = taskInfo(editItem.task);
     requests.unshift({ kind:'edit', desc:`${fmtD(selDate)} ${ti.name} ${ns}〜${ne}に変更` });
@@ -590,6 +648,12 @@ async function doCancel() {
       .eq('id', cancelItem.id);
     if (error) throw error;
 
+    // スプレッドシート同期
+    syncToSheet({
+      action: 'delete', supabaseId: cancelItem.id, date: selDate,
+      client: clientName, startTime: cancelItem.start
+    });
+
     const ti = taskInfo(cancelItem.task);
     requests.unshift({ kind:'cancel', desc:`${fmtD(selDate)} ${ti.name} キャンセル` });
     await loadSchedule();
@@ -608,8 +672,18 @@ async function doCancel() {
 // ==========================================
 // 提出
 // ==========================================
+function getSubmitTargetMonth() {
+  // 提出対象は常に「今日の翌月」（カレンダー表示月ではなく実際の現在月ベース）
+  const now = new Date();
+  const realMonth = now.getMonth() + 1; // 1-12
+  const realYear = now.getFullYear();
+  const nm = realMonth + 1 > 12 ? 1 : realMonth + 1;
+  const ny = realMonth + 1 > 12 ? realYear + 1 : realYear;
+  return { nm, ny };
+}
+
 function renderSubmitPreview() {
-  const nm=cMon+1>12?1:cMon+1, ny=cMon+1>12?cYear+1:cYear;
+  const { nm, ny } = getSubmitTargetMonth();
   document.getElementById('submitTarget').textContent = `${ny}年${nm}月分`;
   const sorted = [...submitEntries].sort((a,b)=>new Date(a.date)-new Date(b.date));
   let h = '';
@@ -626,7 +700,7 @@ function renderSubmitPreview() {
 }
 
 function openSubmitAddModal() {
-  const nm=cMon+1>12?1:cMon+1, ny=cMon+1>12?cYear+1:cYear;
+  const { nm, ny } = getSubmitTargetMonth();
   const nextMonthFirst = ds(ny, nm, 1);
   document.getElementById('submitAddType').value = '居宅';
   document.getElementById('submitAddDate').value = nextMonthFirst;
@@ -657,6 +731,7 @@ function removeSubmitEntry(idx) {
 async function doSubmit() {
   if (!submitEntries.length) { toast('希望を追加してください'); return; }
   try {
+    const bNum = sessionStorage.getItem('beneficiaryNumber') || null;
     const rows = submitEntries.map(e => ({
       date: e.date,
       client: clientName,
@@ -665,18 +740,35 @@ async function doSubmit() {
       start_time: e.start,
       end_time: e.end,
       name: '担当未設定',
-      beneficiary_number: sessionStorage.getItem('beneficiaryNumber') || null
+      beneficiary_number: bNum
     }));
     console.log('提出データ:', rows);
-    const { data, error } = await sb.from('schedule').insert(rows);
+    const { data, error } = await sb.from('schedule').insert(rows).select('id');
     console.log('提出結果:', { data, error });
     if (error) throw error;
+
+    // スプレッドシート同期（各エントリを個別に送信）
+    if (data) {
+      data.forEach((inserted, i) => {
+        const e = submitEntries[i];
+        if (e) {
+          syncToSheet({
+            action: 'add', supabaseId: inserted.id, date: e.date,
+            helper: '担当未設定', client: clientName,
+            startTime: e.start, endTime: e.end,
+            task: e.type, summary: e.note || e.type,
+            beneficiaryNumber: bNum || ''
+          });
+        }
+      });
+    }
+
     submitEntries = [];
     renderSubmitPreview();
-    const nm=cMon+1>12?1:cMon+1, ny=cMon+1>12?cYear+1:cYear;
+    const tgt = getSubmitTargetMonth();
     await loadSchedule();
     renderCalendar();
-    toast(`${ny}年${nm}月のスケジュールを提出しました`);
+    toast(`${tgt.ny}年${tgt.nm}月のスケジュールを提出しました`);
   } catch (ex) {
     console.error('提出エラー:', ex);
     toast('提出に失敗しました: ' + (ex.message || ex));
