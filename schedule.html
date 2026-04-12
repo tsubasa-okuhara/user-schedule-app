@@ -852,7 +852,7 @@ function renderSubmitPreview() {
 function openSubmitAddModal() {
   const { nm, ny } = getSubmitTargetMonth();
   const nextMonthFirst = ds(ny, nm, 1);
-  document.getElementById('submitAddType').value = '居宅';
+  document.getElementById('submitAddType').value = '移動';
   document.getElementById('submitAddDate').value = nextMonthFirst;
   document.getElementById('submitAddStart').value = '09:00';
   document.getElementById('submitAddEnd').value = '11:00';
