@@ -269,7 +269,7 @@ async function syncToSheet(payload) {
   if (!GAS_WEB_APP_URL) { console.log('GAS URL未設定 - スプレッドシート同期スキップ'); return; }
   console.log('スプレッドシート同期開始:', JSON.stringify(payload));
 
-  // 方法1: no-cors POSTで送信（GASリダイレクト問題を回避）
+  // no-cors POSTで送信（GASリダイレクト問題を回避）
   // no-corsではレスポンスは読めないが、GAS側にはデータが届く
   try {
     await fetch(GAS_WEB_APP_URL, {
@@ -277,19 +277,9 @@ async function syncToSheet(payload) {
       mode: 'no-cors',
       body: JSON.stringify(payload)
     });
-    console.log('スプレッドシート同期: no-cors送信完了');
+    console.log('スプレッドシート同期: 送信完了');
   } catch (ex) {
-    console.warn('スプレッドシート同期: no-cors送信失敗', ex);
-  }
-
-  // 方法2: 並行してGET + クエリパラメータでも送信（バックアップ）
-  try {
-    const params = encodeURIComponent(JSON.stringify(payload));
-    const img = new Image();
-    img.src = GAS_WEB_APP_URL + '?payload=' + params + '&t=' + Date.now();
-    console.log('スプレッドシート同期: GETバックアップ送信');
-  } catch (ex2) {
-    console.warn('スプレッドシート同期: GETバックアップ失敗', ex2);
+    console.warn('スプレッドシート同期: 送信失敗', ex);
   }
 }
 
