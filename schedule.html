@@ -844,7 +844,7 @@ function openSubmitAddModal() {
   document.getElementById('submitAddModal').classList.add('show');
 }
 
-function doSubmitAdd() {
+async function doSubmitAdd() {
   const type = document.getElementById('submitAddType').value;
   const date = document.getElementById('submitAddDate').value;
   const start = document.getElementById('submitAddStart').value;
@@ -853,19 +853,32 @@ function doSubmitAdd() {
   if (!date||!start||!end) { toast('日付と時間を入力してください'); return; }
   if (start >= end) { toast('終了時間は開始時間より後にしてください'); return; }
 
-  // 時間重複チェック（追加済みリスト内）
+  // 時間重複チェック①（追加済みリスト内）
   const dup1 = checkOverlapInSubmitEntries(date, start, end, -1);
   if (dup1) {
     const ti = taskInfo(dup1.type);
     toast(`${ti.name} ${dup1.start}〜${dup1.end} と時間が重複しています`);
     return;
   }
-  // 時間重複チェック（Supabase既存データ）
-  const dup2 = checkOverlapInSchedule(date, start, end, null);
-  if (dup2) {
-    const ti = taskInfo(dup2.task);
-    toast(`既存の予定（${ti.name} ${dup2.start}〜${dup2.end}）と時間が重複しています`);
-    return;
+
+  // 時間重複チェック②（Supabase既存データ — 来月分を直接取得）
+  try {
+    const { data: existing } = await sb.from('schedule')
+      .select('task, start_time, end_time')
+      .eq('client', clientName).eq('date', date);
+    if (existing && existing.length > 0) {
+      for (const row of existing) {
+        const rs = fmtTime(row.start_time);
+        const re = fmtTime(row.end_time);
+        if (timeOverlaps(start, end, rs, re)) {
+          const ti = taskInfo(row.task);
+          toast(`既存の予定（${ti.name} ${rs}〜${re}）と時間が重複しています`);
+          return;
+        }
+      }
+    }
+  } catch (ex) {
+    console.warn('既存データ重複チェックエラー:', ex);
   }
 
   submitEntries.push({ type, date, start, end, note });
