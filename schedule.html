@@ -376,6 +376,7 @@ let cYear, cMon, selDate, curPage = 'confirm';
 let editItem = null, cancelItem = null;
 let requests = []; // ローカル管理の申請履歴
 let submitEntries = []; // { type, date, start, end, note }
+let isProcessing = false; // 二重送信防止フラグ
 
 // ==========================================
 // 初期化
@@ -602,12 +603,18 @@ function openAddModal() {
 }
 
 async function doAdd() {
+  if (isProcessing) { console.log('処理中のため無視'); return; }
   const type = document.getElementById('addType').value;
   const date = document.getElementById('addDate').value;
   const start = document.getElementById('addStart').value;
   const end = document.getElementById('addEnd').value;
   const note = document.getElementById('addNote').value;
   if (!date||!start||!end) { toast('入力してください'); return; }
+
+  isProcessing = true;
+  const btn = document.querySelector('#addModal .modal-btn.confirm');
+  const originalText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '送信中…'; }
 
   try {
     const row = {
@@ -645,6 +652,9 @@ async function doAdd() {
   } catch (ex) {
     console.error(ex);
     toast('追加に失敗しました');
+  } finally {
+    isProcessing = false;
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
   }
 }
 
@@ -662,10 +672,16 @@ function openEditModal(date, idx) {
 }
 
 async function doEdit() {
+  if (isProcessing) { console.log('処理中のため無視'); return; }
   if (!editItem) return;
   const ns = document.getElementById('editStart').value;
   const ne = document.getElementById('editEnd').value;
   const oldStart = editItem.start; // 変更前の開始時間
+
+  isProcessing = true;
+  const btn = document.querySelector('#editModal .modal-btn.confirm');
+  const originalText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '送信中…'; }
 
   try {
     const { error } = await sb.from('schedule')
@@ -696,6 +712,9 @@ async function doEdit() {
   } catch (ex) {
     console.error(ex);
     toast('変更に失敗しました');
+  } finally {
+    isProcessing = false;
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
   }
 }
 
@@ -712,7 +731,14 @@ function openCancelModal(date, idx) {
 }
 
 async function doCancel() {
+  if (isProcessing) { console.log('処理中のため無視'); return; }
   if (!cancelItem) return;
+
+  isProcessing = true;
+  const btn = document.querySelector('#cancelModal .modal-btn.danger');
+  const originalText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '送信中…'; }
+
   try {
     const { error } = await sb.from('schedule')
       .delete()
@@ -741,6 +767,9 @@ async function doCancel() {
   } catch (ex) {
     console.error(ex);
     toast('キャンセルに失敗しました');
+  } finally {
+    isProcessing = false;
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
   }
 }
 
@@ -804,7 +833,15 @@ function removeSubmitEntry(idx) {
 }
 
 async function doSubmit() {
+  if (isProcessing) { console.log('処理中のため無視'); return; }
   if (!submitEntries.length) { toast('希望を追加してください'); return; }
+
+  isProcessing = true;
+  const btn = document.getElementById('submitBtn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '送信中…';
+
   try {
     const bNum = sessionStorage.getItem('beneficiaryNumber') || null;
     const rows = submitEntries.map(e => ({
@@ -842,6 +879,10 @@ async function doSubmit() {
   } catch (ex) {
     console.error('提出エラー:', ex);
     toast('提出に失敗しました: ' + (ex.message || ex));
+  } finally {
+    isProcessing = false;
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
 }
 
