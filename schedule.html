@@ -150,8 +150,8 @@
   <button class="page-tab" onclick="switchPage(this,'change')">変更・追加</button>
 </div>
 <div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div>居宅</div>
   <div class="legend-item"><div class="legend-dot" style="background:#2196f3"></div>移動</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div>居宅</div>
   <div class="legend-item"><div class="legend-dot" style="background:#ff9800"></div>家事</div>
   <div class="legend-item"><div class="legend-dot" style="background:#9c27b0"></div>通院</div>
 </div>
@@ -199,7 +199,7 @@
 <!-- モーダル: 追加 -->
 <div class="modal-overlay" id="addModal"><div class="modal">
   <h3>予定を追加する</h3>
-  <div class="form-group"><label>サービス種類</label><select id="addType"><option value="居宅">居宅介護</option><option value="移動">移動支援</option><option value="家事">家事援助</option><option value="通院">通院介助</option></select></div>
+  <div class="form-group"><label>サービス種類</label><select id="addType"><option value="移動">移動支援</option><option value="居宅">居宅介護</option><option value="家事">家事援助</option><option value="通院">通院介助</option></select></div>
   <div class="form-group"><label>日付</label><input type="date" id="addDate"></div>
   <div class="form-group"><label>開始時間</label><input type="time" id="addStart" value="09:00"></div>
   <div class="form-group"><label>終了時間</label><input type="time" id="addEnd" value="11:00"></div>
@@ -210,7 +210,7 @@
 <!-- モーダル: 提出用追加 -->
 <div class="modal-overlay" id="submitAddModal"><div class="modal">
   <h3>希望日時を追加する</h3>
-  <div class="form-group"><label>サービス種類</label><select id="submitAddType"><option value="居宅">居宅介護</option><option value="移動">移動支援</option><option value="家事">家事援助</option><option value="通院">通院介助</option></select></div>
+  <div class="form-group"><label>サービス種類</label><select id="submitAddType"><option value="移動">移動支援</option><option value="居宅">居宅介護</option><option value="家事">家事援助</option><option value="通院">通院介助</option></select></div>
   <div class="form-group"><label>日付</label><input type="date" id="submitAddDate"></div>
   <div class="form-group"><label>開始時間</label><input type="time" id="submitAddStart" value="09:00"></div>
   <div class="form-group"><label>終了時間</label><input type="time" id="submitAddEnd" value="11:00"></div>
@@ -367,6 +367,37 @@ let editItem = null, cancelItem = null;
 let requests = []; // ローカル管理の申請履歴
 let submitEntries = []; // { type, date, start, end, note }
 let isProcessing = false; // 二重送信防止フラグ
+
+// ==========================================
+// 時間重複チェック
+// ==========================================
+function timeOverlaps(start1, end1, start2, end2) {
+  // "10:00" のような文字列を比較（辞書順で時刻比較が成立する）
+  return start1 < end2 && start2 < end1;
+}
+
+function checkOverlapInSubmitEntries(date, start, end, excludeIdx) {
+  // submitEntries 内で同じ日に時間重複があるかチェック
+  for (let i = 0; i < submitEntries.length; i++) {
+    if (i === excludeIdx) continue;
+    if (submitEntries[i].date === date && timeOverlaps(start, end, submitEntries[i].start, submitEntries[i].end)) {
+      return submitEntries[i];
+    }
+  }
+  return null;
+}
+
+function checkOverlapInSchedule(date, start, end, excludeId) {
+  // scheduleData（Supabase既存データ）内で同じ日に時間重複があるかチェック
+  const items = scheduleData[date] || [];
+  for (const item of items) {
+    if (excludeId && item.id === excludeId) continue;
+    if (timeOverlaps(start, end, item.start, item.end)) {
+      return item;
+    }
+  }
+  return null;
+}
 
 // ==========================================
 // 初期化
@@ -600,6 +631,15 @@ async function doAdd() {
   const end = document.getElementById('addEnd').value;
   const note = document.getElementById('addNote').value;
   if (!date||!start||!end) { toast('入力してください'); return; }
+  if (start >= end) { toast('終了時間は開始時間より後にしてください'); return; }
+
+  // 時間重複チェック（Supabase既存データ）
+  const dupCheck = checkOverlapInSchedule(date, start, end, null);
+  if (dupCheck) {
+    const dti = taskInfo(dupCheck.task);
+    toast(`既存の予定（${dti.name} ${dupCheck.start}〜${dupCheck.end}）と時間が重複しています`);
+    return;
+  }
 
   isProcessing = true;
   const btn = document.querySelector('#addModal .modal-btn.confirm');
@@ -811,6 +851,23 @@ function doSubmitAdd() {
   const end = document.getElementById('submitAddEnd').value;
   const note = document.getElementById('submitAddNote').value;
   if (!date||!start||!end) { toast('日付と時間を入力してください'); return; }
+  if (start >= end) { toast('終了時間は開始時間より後にしてください'); return; }
+
+  // 時間重複チェック（追加済みリスト内）
+  const dup1 = checkOverlapInSubmitEntries(date, start, end, -1);
+  if (dup1) {
+    const ti = taskInfo(dup1.type);
+    toast(`${ti.name} ${dup1.start}〜${dup1.end} と時間が重複しています`);
+    return;
+  }
+  // 時間重複チェック（Supabase既存データ）
+  const dup2 = checkOverlapInSchedule(date, start, end, null);
+  if (dup2) {
+    const ti = taskInfo(dup2.task);
+    toast(`既存の予定（${ti.name} ${dup2.start}〜${dup2.end}）と時間が重複しています`);
+    return;
+  }
+
   submitEntries.push({ type, date, start, end, note });
   renderSubmitPreview();
   closeModal('submitAddModal');
