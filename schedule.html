@@ -294,6 +294,58 @@ async function syncToSheet(payload) {
 }
 
 // ==========================================
+// ヘルパー通知送信（通知一覧 + プッシュ通知）
+// ==========================================
+const HELPER_APP_URL = 'https://village-tsubasa.web.app';
+
+async function notifyHelper(helperEmail, helperName, type, detail) {
+  if (!helperEmail || helperEmail === '' || helperName === '担当未設定') {
+    console.log('通知スキップ: ヘルパー未設定');
+    return;
+  }
+
+  const typeLabel = type === 'edit' ? '変更' : 'キャンセル';
+  const title = `スケジュール${typeLabel}通知`;
+  const body = `${displayName}さんの予定が${typeLabel}されました\n${detail}`;
+
+  // 1) notifications テーブルに INSERT（通知一覧に表示される）
+  try {
+    const { error } = await sb.from('notifications').insert({
+      target_email: helperEmail,
+      title: title,
+      body: body,
+      link_url: '/schedule.html',
+      notification_type: 'schedule_' + type,
+      is_read: false
+    });
+    if (error) {
+      console.warn('通知INSERT失敗:', error);
+    } else {
+      console.log('通知INSERT成功: ' + helperEmail);
+    }
+  } catch (ex) {
+    console.warn('通知INSERTエラー:', ex);
+  }
+
+  // 2) プッシュ通知（ヘルパーアプリのAPIを呼び出し）
+  try {
+    const res = await fetch(HELPER_APP_URL + '/api/notify-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target_email: helperEmail,
+        title: title,
+        body: body,
+        type: 'schedule_' + type
+      })
+    });
+    console.log('プッシュ通知API:', res.status);
+  } catch (ex) {
+    console.warn('プッシュ通知APIエラー（通知一覧には保存済み）:', ex);
+  }
+}
+
+// ==========================================
 // サービス種類マッピング
 // ==========================================
 function taskInfo(task) {
@@ -360,8 +412,9 @@ async function loadSchedule() {
   const endDate = ds(cYear, cMon, new Date(cYear, cMon, 0).getDate());
 
   try {
+    // schedule_web_v VIEWを使ってヘルパーメールも取得
     const { data, error } = await sb
-      .from('schedule')
+      .from('schedule_web_v')
       .select('*')
       .eq('client', clientName)
       .gte('date', startDate)
@@ -369,23 +422,38 @@ async function loadSchedule() {
       .order('date')
       .order('start_time');
 
-    if (error) throw error;
-
-    scheduleData = {};
-    if (data) {
-      data.forEach(row => {
+    if (error) {
+      // VIEWにアクセスできない場合はscheduleテーブルにフォールバック
+      console.warn('schedule_web_vエラー、scheduleテーブルにフォールバック:', error);
+      const fb = await sb.from('schedule').select('*')
+        .eq('client', clientName).gte('date', startDate).lte('date', endDate)
+        .order('date').order('start_time');
+      if (fb.error) throw fb.error;
+      if (fb.data) fb.data.forEach(row => {
         const d = row.date;
         if (!scheduleData[d]) scheduleData[d] = [];
-        scheduleData[d].push({
-          id: row.id,
-          task: row.task || row.summary || '',
-          start: fmtTime(row.start_time),
-          end: fmtTime(row.end_time),
-          helper: row.name || '',
-          summary: row.summary || '',
-          haisha: row.haisha || ''
-        });
+        scheduleData[d].push({ id: row.id, task: row.task || row.summary || '',
+          start: fmtTime(row.start_time), end: fmtTime(row.end_time),
+          helper: row.name || '', helperEmail: '', summary: row.summary || '', haisha: row.haisha || '' });
       });
+    } else {
+      scheduleData = {};
+      if (data) {
+        data.forEach(row => {
+          const d = row.date;
+          if (!scheduleData[d]) scheduleData[d] = [];
+          scheduleData[d].push({
+            id: row.id,
+            task: row.task || row.summary || '',
+            start: fmtTime(row.start_time),
+            end: fmtTime(row.end_time),
+            helper: row.name || '',
+            helperEmail: row.helper_email || '',
+            summary: row.summary || '',
+            haisha: row.haisha || ''
+          });
+        });
+      }
     }
   } catch (ex) {
     console.error('データ取得エラー:', ex);
@@ -612,7 +680,11 @@ async function doEdit() {
       startTime: ns, endTime: ne
     });
 
+    // ヘルパーに通知
     const ti = taskInfo(editItem.task);
+    notifyHelper(editItem.helperEmail, editItem.helper, 'edit',
+      `${fmtD(selDate)} ${ti.name} ${oldStart}→${ns}〜${ne}`);
+
     requests.unshift({ kind:'edit', desc:`${fmtD(selDate)} ${ti.name} ${ns}〜${ne}に変更` });
     await loadSchedule();
     renderCalendar();
@@ -653,7 +725,11 @@ async function doCancel() {
       client: clientName, startTime: cancelItem.start
     });
 
+    // ヘルパーに通知
     const ti = taskInfo(cancelItem.task);
+    notifyHelper(cancelItem.helperEmail, cancelItem.helper, 'cancel',
+      `${fmtD(selDate)} ${ti.name} ${cancelItem.start}〜${cancelItem.end} キャンセル`);
+
     requests.unshift({ kind:'cancel', desc:`${fmtD(selDate)} ${ti.name} キャンセル` });
     await loadSchedule();
     renderCalendar();
