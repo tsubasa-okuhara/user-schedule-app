@@ -203,6 +203,7 @@
   <div class="form-group"><label>日付</label><input type="date" id="addDate"></div>
   <div class="form-group"><label>開始時間</label><input type="time" id="addStart" value="09:00"></div>
   <div class="form-group"><label>終了時間</label><input type="time" id="addEnd" value="11:00"></div>
+  <div id="addError" style="display:none;background:#fce4ec;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#c62828;font-weight:600;line-height:1.5"></div>
   <div class="form-group"><label>内容メモ（任意）</label><textarea id="addNote" placeholder="例：買い物に行きたい"></textarea></div>
   <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeModal('addModal')">戻る</button><button class="modal-btn confirm" onclick="doAdd()">追加を申請</button></div>
 </div></div>
@@ -214,6 +215,7 @@
   <div class="form-group"><label>日付</label><input type="date" id="submitAddDate"></div>
   <div class="form-group"><label>開始時間</label><input type="time" id="submitAddStart" value="09:00"></div>
   <div class="form-group"><label>終了時間</label><input type="time" id="submitAddEnd" value="11:00"></div>
+  <div id="submitAddError" style="display:none;background:#fce4ec;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#c62828;font-weight:600;line-height:1.5"></div>
   <div class="form-group"><label>内容メモ（任意）</label><textarea id="submitAddNote" placeholder="例：買い物に行きたい"></textarea></div>
   <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeModal('submitAddModal')">戻る</button><button class="modal-btn confirm" onclick="doSubmitAdd()">追加する</button></div>
 </div></div>
@@ -354,7 +356,20 @@ function ds(y,m,d){return`${y}-${pad(m)}-${pad(d)}`}
 function fmtD(s){const d=new Date(s+'T00:00:00');return`${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`}
 function fmtTime(t){if(!t)return'--:--';return t.substring(0,5)}
 function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)}
-function closeModal(id){document.getElementById(id).classList.remove('show')}
+function closeModal(id){
+  document.getElementById(id).classList.remove('show');
+  // モーダル内エラー表示をクリア
+  const err = document.getElementById(id === 'submitAddModal' ? 'submitAddError' : id === 'addModal' ? 'addError' : '');
+  if (err) { err.style.display = 'none'; err.textContent = ''; }
+}
+function showModalError(errorId, msg) {
+  const el = document.getElementById(errorId);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+function clearModalError(errorId) {
+  const el = document.getElementById(errorId);
+  if (el) { el.style.display = 'none'; el.textContent = ''; }
+}
 
 // ==========================================
 // 状態
@@ -630,14 +645,15 @@ async function doAdd() {
   const start = document.getElementById('addStart').value;
   const end = document.getElementById('addEnd').value;
   const note = document.getElementById('addNote').value;
-  if (!date||!start||!end) { toast('入力してください'); return; }
-  if (start >= end) { toast('終了時間は開始時間より後にしてください'); return; }
+  clearModalError('addError');
+  if (!date||!start||!end) { showModalError('addError', '入力してください'); return; }
+  if (start >= end) { showModalError('addError', '終了時間は開始時間より後にしてください'); return; }
 
   // 時間重複チェック（Supabase既存データ）
   const dupCheck = checkOverlapInSchedule(date, start, end, null);
   if (dupCheck) {
     const dti = taskInfo(dupCheck.task);
-    toast(`既存の予定（${dti.name} ${dupCheck.start}〜${dupCheck.end}）と時間が重複しています`);
+    showModalError('addError', `⚠ 既存の予定（${dti.name} ${dupCheck.start}〜${dupCheck.end}）と時間が重複しています`);
     return;
   }
 
@@ -845,19 +861,20 @@ function openSubmitAddModal() {
 }
 
 async function doSubmitAdd() {
+  clearModalError('submitAddError');
   const type = document.getElementById('submitAddType').value;
   const date = document.getElementById('submitAddDate').value;
   const start = document.getElementById('submitAddStart').value;
   const end = document.getElementById('submitAddEnd').value;
   const note = document.getElementById('submitAddNote').value;
-  if (!date||!start||!end) { toast('日付と時間を入力してください'); return; }
-  if (start >= end) { toast('終了時間は開始時間より後にしてください'); return; }
+  if (!date||!start||!end) { showModalError('submitAddError', '日付と時間を入力してください'); return; }
+  if (start >= end) { showModalError('submitAddError', '終了時間は開始時間より後にしてください'); return; }
 
   // 時間重複チェック①（追加済みリスト内）
   const dup1 = checkOverlapInSubmitEntries(date, start, end, -1);
   if (dup1) {
     const ti = taskInfo(dup1.type);
-    toast(`${ti.name} ${dup1.start}〜${dup1.end} と時間が重複しています`);
+    showModalError('submitAddError', `⚠ ${ti.name} ${dup1.start}〜${dup1.end} と時間が重複しています`);
     return;
   }
 
@@ -872,7 +889,7 @@ async function doSubmitAdd() {
         const re = fmtTime(row.end_time);
         if (timeOverlaps(start, end, rs, re)) {
           const ti = taskInfo(row.task);
-          toast(`既存の予定（${ti.name} ${rs}〜${re}）と時間が重複しています`);
+          showModalError('submitAddError', `⚠ 既存の予定（${ti.name} ${rs}〜${re}）と時間が重複しています`);
           return;
         }
       }
