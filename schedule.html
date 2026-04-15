@@ -272,11 +272,7 @@ const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxlYmQHfINWY2sz
 
 async function syncToSheet(payload) {
   if (!GAS_WEB_APP_URL) { console.log('GAS URL未設定 - スプレッドシート同期スキップ'); return; }
-<<<<<<< HEAD
   console.log('スプレッドシート同期開始:', JSON.stringify(payload));
-
-  // no-cors POSTで送信（GASリダイレクト問題を回避）
-  // no-corsではレスポンスは読めないが、GAS側にはデータが届く
   try {
     await fetch(GAS_WEB_APP_URL, {
       method: 'POST',
@@ -304,7 +300,7 @@ async function notifyHelper(helperEmail, helperName, type, detail) {
   const title = `スケジュール${typeLabel}通知`;
   const body = `${displayName}さんの予定が${typeLabel}されました\n${detail}`;
 
-  // 1) notifications テーブルに INSERT（通知一覧に表示される）
+  // 1) notifications テーブルに INSERT
   try {
     const { error } = await sb.from('notifications').insert({
       target_email: helperEmail,
@@ -323,7 +319,7 @@ async function notifyHelper(helperEmail, helperName, type, detail) {
     console.warn('通知INSERTエラー:', ex);
   }
 
-  // 2) プッシュ通知（ヘルパーアプリのAPIを呼び出し）
+  // 2) プッシュ通知
   try {
     const res = await fetch(HELPER_APP_URL + '/api/notify-push', {
       method: 'POST',
@@ -337,20 +333,7 @@ async function notifyHelper(helperEmail, helperName, type, detail) {
     });
     console.log('プッシュ通知API:', res.status);
   } catch (ex) {
-    console.warn('プッシュ通知APIエラー（通知一覧には保存済み）:', ex);
-=======
-  try {
-    console.log('スプレッドシート同期:', payload);
-    await fetch(GAS_WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-    console.log('スプレッドシート同期リクエスト送信完了');
-  } catch (ex) {
-    console.warn('スプレッドシート同期エラー（操作自体は成功）:', ex);
->>>>>>> 4824a5d (スプレッドシート逆同期を追加（GAS Web App連携）)
+    console.warn('プッシュ通知APIエラー:', ex);
   }
 }
 
@@ -690,7 +673,6 @@ async function doAdd() {
       name: '担当未設定',
       beneficiary_number: sessionStorage.getItem('beneficiaryNumber') || null
     };
-<<<<<<< HEAD
     console.log('doAdd挿入データ:', JSON.stringify(row));
     const { error } = await sb.from('schedule').insert(row);
     console.log('doAdd結果:', JSON.stringify({ error }));
@@ -699,15 +681,6 @@ async function doAdd() {
     // スプレッドシート同期
     syncToSheet({
       action: 'add', supabaseId: null, date: date,
-=======
-    const { data, error } = await sb.from('schedule').insert(row).select('id');
-    if (error) throw error;
-
-    // スプレッドシート同期
-    const insertedId = data && data[0] ? data[0].id : null;
-    syncToSheet({
-      action: 'add', supabaseId: insertedId, date: date,
->>>>>>> 4824a5d (スプレッドシート逆同期を追加（GAS Web App連携）)
       helper: '担当未設定', client: clientName,
       startTime: start, endTime: end, task: type, summary: type,
       beneficiaryNumber: sessionStorage.getItem('beneficiaryNumber') || ''
@@ -750,14 +723,11 @@ async function doEdit() {
   const ns = document.getElementById('editStart').value;
   const ne = document.getElementById('editEnd').value;
   const oldStart = editItem.start; // 変更前の開始時間
-<<<<<<< HEAD
 
   isProcessing = true;
   const btn = document.querySelector('#editModal .modal-btn.confirm');
   const originalText = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '送信中…'; }
-=======
->>>>>>> 4824a5d (スプレッドシート逆同期を追加（GAS Web App連携）)
 
   try {
     const { error } = await sb.from('schedule')
@@ -772,10 +742,7 @@ async function doEdit() {
       startTime: ns, endTime: ne
     });
 
-<<<<<<< HEAD
     // ヘルパーに通知
-=======
->>>>>>> 4824a5d (スプレッドシート逆同期を追加（GAS Web App連携）)
     const ti = taskInfo(editItem.task);
     notifyHelper(editItem.helperEmail, editItem.helper, 'edit',
       `${fmtD(selDate)} ${ti.name} ${oldStart}→${ns}〜${ne}`);
@@ -830,10 +797,7 @@ async function doCancel() {
       client: clientName, startTime: cancelItem.start
     });
 
-<<<<<<< HEAD
     // ヘルパーに通知
-=======
->>>>>>> 4824a5d (スプレッドシート逆同期を追加（GAS Web App連携）)
     const ti = taskInfo(cancelItem.task);
     notifyHelper(cancelItem.helperEmail, cancelItem.helper, 'cancel',
       `${fmtD(selDate)} ${ti.name} ${cancelItem.start}〜${cancelItem.end} キャンセル`);
@@ -968,7 +932,6 @@ async function doSubmit() {
       beneficiary_number: bNum
     }));
     console.log('提出データ:', rows);
-<<<<<<< HEAD
     const { error } = await sb.from('schedule').insert(rows);
     console.log('提出結果:', { error });
     if (error) throw error;
@@ -983,27 +946,6 @@ async function doSubmit() {
         beneficiaryNumber: bNum || ''
       });
     });
-=======
-    const { data, error } = await sb.from('schedule').insert(rows).select('id');
-    console.log('提出結果:', { data, error });
-    if (error) throw error;
-
-    // スプレッドシート同期（各エントリを個別に送信）
-    if (data) {
-      data.forEach((inserted, i) => {
-        const e = submitEntries[i];
-        if (e) {
-          syncToSheet({
-            action: 'add', supabaseId: inserted.id, date: e.date,
-            helper: '担当未設定', client: clientName,
-            startTime: e.start, endTime: e.end,
-            task: e.type, summary: e.note || e.type,
-            beneficiaryNumber: bNum || ''
-          });
-        }
-      });
-    }
->>>>>>> 4824a5d (スプレッドシート逆同期を追加（GAS Web App連携）)
 
     submitEntries = [];
     renderSubmitPreview();
