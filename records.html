@@ -10,157 +10,139 @@
   body{font-family:'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif;background:#f0f4f8;color:#333;min-height:100vh;-webkit-tap-highlight-color:transparent}
   .header{background:linear-gradient(135deg,#1a5276,#2980b9);color:#fff;padding:14px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
   .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-  .header h1{font-size:20px;font-weight:700;letter-spacing:1px}
+  .header h1{font-size:18px;font-weight:700;letter-spacing:1px}
   .user-name{font-size:13px;opacity:.9}
   .month-nav{display:flex;align-items:center;justify-content:center;gap:16px}
   .month-nav button{background:rgba(255,255,255,.2);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .month-nav button:active{background:rgba(255,255,255,.4)}
   .current-month{font-size:17px;font-weight:600;min-width:130px;text-align:center}
-  .page-tabs{display:flex;background:#fff;border-bottom:1px solid #e0e0e0}
-  .page-tab{flex:1;padding:11px 6px;text-align:center;font-size:13px;font-weight:600;border:none;background:none;color:#aaa;cursor:pointer;position:relative}
-  .page-tab.active{color:#1a5276}
-  .page-tab.active::after{content:'';position:absolute;bottom:0;left:16%;right:16%;height:3px;background:#1a5276;border-radius:3px 3px 0 0}
-  .summary-bar{display:flex;justify-content:center;gap:16px;padding:10px 16px;background:#fff;border-bottom:1px solid #eee}
-  .summary-item{font-size:12px;color:#666;display:flex;align-items:center;gap:4px}
-  .summary-num{font-weight:700;font-size:15px;color:#1a5276}
-  .legend{display:flex;justify-content:center;gap:12px;padding:8px 16px 4px}
-  .legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#888}
-  .legend-dot{width:8px;height:8px;border-radius:50%}
-  .calendar{background:#fff;margin:8px 12px;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
-  .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);background:#f8faf9;border-bottom:1px solid #eee}
-  .cal-weekdays span{text-align:center;padding:7px 0;font-size:11px;font-weight:600;color:#888}
-  .cal-weekdays span:first-child{color:#e74c3c}
-  .cal-weekdays span:last-child{color:#2980b9}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
-  .cal-day{padding:6px 2px;text-align:center;cursor:pointer;min-height:48px;border-bottom:1px solid #f0f0f0;position:relative}
-  .cal-day:active{background:#f0f5ff}
-  .cal-day.selected{background:#e3f0fc}
-  .cal-day.today .day-num{background:#1a5276;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;margin:0 auto}
-  .cal-day.other-month{opacity:.3}
-  .day-num{font-size:13px;font-weight:600;margin-bottom:2px}
-  .day-dots{display:flex;justify-content:center;gap:3px;min-height:8px}
-  .day-dot{width:6px;height:6px;border-radius:50%}
-  .day-check{position:absolute;top:2px;right:4px;font-size:10px}
-  .section{display:none;padding:0 12px 100px}
-  .section.active{display:block}
-  .day-detail{padding:16px 0}
-  .detail-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:16px;font-weight:700}
-  .count-badge{font-size:12px;color:#1a5276;background:#e3f0fc;padding:2px 10px;border-radius:12px;font-weight:600}
-  .empty-msg{text-align:center;padding:30px;color:#aaa;font-size:14px}
-  .record-card{background:#fff;border-radius:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;display:flex;position:relative}
-  .svc-bar{width:5px;flex-shrink:0}
-  .record-body{flex:1;padding:14px;display:flex;gap:12px;align-items:flex-start}
-  .record-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-  .record-info{flex:1}
-  .record-name{font-size:15px;font-weight:700}
-  .record-time{font-size:13px;color:#888;margin-top:2px}
-  .record-helper{font-size:12px;color:#1a5276;margin-top:2px}
-  .record-dest{font-size:12px;color:#555;margin-top:4px;padding:4px 8px;background:#f8f9fa;border-radius:6px}
-  .record-note{font-size:12px;color:#999;margin-top:2px}
-  .record-status{position:absolute;top:10px;right:12px}
-  .status-badge{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600}
-  .status-badge.confirmed{background:#e8f5e9;color:#2e7d32}
-  .status-badge.pending{background:#fff3e0;color:#e65100}
-  .status-badge.unrecorded{background:#f5f5f5;color:#999}
-  .confirm-btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;background:#1a5276;color:#fff;margin-top:8px}
-  .confirm-btn:active{opacity:.8}
-  .confirm-btn:disabled{background:#ccc;cursor:default}
-  .confirm-btn.done{background:#e8f5e9;color:#2e7d32}
-  .month-summary{background:#fff;margin:8px 12px;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-  .month-summary h3{font-size:15px;font-weight:700;margin-bottom:12px;color:#1a5276}
-  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .summary-card{background:#f8f9fa;border-radius:10px;padding:12px;text-align:center}
-  .summary-card .label{font-size:11px;color:#888;margin-bottom:4px}
-  .summary-card .value{font-size:20px;font-weight:700;color:#1a5276}
-  .summary-card .unit{font-size:12px;color:#888}
+
+  /* 記録票ヘッダー */
+  .form-header{background:#fff;margin:8px 8px 0;border-radius:10px 10px 0 0;padding:12px;border:2px solid #333;border-bottom:1px solid #999}
+  .form-title{text-align:center;font-size:14px;font-weight:700;margin-bottom:8px}
+  .form-info{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px}
+  .form-info-row{display:flex;gap:4px}
+  .form-info-label{color:#666;white-space:nowrap}
+  .form-info-value{font-weight:600}
+
+  /* 記録票テーブル */
+  .record-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 8px;background:#fff;border-left:2px solid #333;border-right:2px solid #333}
+  .record-table{width:100%;min-width:700px;border-collapse:collapse;font-size:11px}
+  .record-table th{background:#e8e8e8;border:1px solid #999;padding:4px 3px;text-align:center;font-weight:700;position:sticky;top:0;z-index:2;white-space:nowrap}
+  .record-table th.sub{font-size:10px;background:#f0f0f0}
+  .record-table td{border:1px solid #ccc;padding:4px 3px;text-align:center;vertical-align:middle}
+  .record-table tr:nth-child(even) td{background:#fafcff}
+  .record-table tr.has-data td{background:#fff}
+  .record-table tr.has-data:nth-child(even) td{background:#f8fbff}
+  .record-table .col-day{width:28px;font-weight:600}
+  .record-table .col-dow{width:22px}
+  .record-table .col-svc{width:60px;font-size:10px;text-align:left;padding-left:4px}
+  .record-table .col-time{width:42px;font-size:10px}
+  .record-table .col-hours{width:32px;font-size:10px}
+  .record-table .col-check{width:30px;cursor:pointer}
+  .record-table .col-note{min-width:60px;font-size:10px;text-align:left;padding-left:4px}
+  .record-table .sun{color:#e74c3c}
+  .record-table .sat{color:#2980b9}
+
+  /* チェックマーク */
+  .check-cell{cursor:pointer;user-select:none;-webkit-user-select:none}
+  .check-cell .checkmark{font-size:16px;color:#2e7d32;font-weight:700}
+  .check-cell .checkmark.unchecked{color:#ccc;font-size:14px}
+
+  /* 集計欄 */
+  .form-footer{background:#fff;margin:0 8px 8px;border-radius:0 0 10px 10px;padding:10px 12px;border:2px solid #333;border-top:2px solid #333}
+  .summary-title{font-size:12px;font-weight:700;margin-bottom:6px}
+  .summary-table{width:100%;border-collapse:collapse;font-size:11px}
+  .summary-table th,.summary-table td{border:1px solid #999;padding:4px 6px}
+  .summary-table th{background:#e8e8e8;font-weight:700;text-align:left;white-space:nowrap}
+  .summary-table td{text-align:center}
+  .summary-table .total-row{background:#f0f5ff;font-weight:700}
+
+  /* ボタン */
+  .action-bar{padding:12px 12px 0;display:flex;gap:8px}
+  .action-btn{flex:1;padding:12px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer}
+  .action-btn:active{opacity:.8}
+  .action-btn.primary{background:#1a5276;color:#fff}
+  .action-btn.secondary{background:#fff;color:#1a5276;border:2px solid #1a5276}
+  .action-btn:disabled{background:#ccc;color:#999;border-color:#ccc}
+
   .toast{position:fixed;top:-60px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:25px;font-size:14px;font-weight:600;z-index:300;transition:top .3s ease;white-space:nowrap}
   .toast.show{top:20px}
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
-  .modal-overlay.show{display:flex;animation:fadeIn .2s ease}
-  .modal{background:#fff;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0));width:100%;max-width:480px;animation:slideUp .3s ease}
-  .modal h3{font-size:17px;text-align:center;margin-bottom:16px}
-  .modal-buttons{display:flex;gap:10px;margin-top:16px}
-  .modal-btn{flex:1;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;border:none}
-  .modal-btn:active{transform:scale(.97)}
-  .modal-btn.cancel{background:#eee;color:#666}
-  .modal-btn.confirm{background:#1a5276;color:#fff}
-  .sign-area{border:2px dashed #ccc;border-radius:12px;padding:30px;text-align:center;color:#aaa;font-size:14px;margin:12px 0;min-height:100px;display:flex;align-items:center;justify-content:center}
-  .sign-area.signed{border-color:#2e7d32;background:#f1f8e9;color:#2e7d32}
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .spacer{height:80px}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;box-shadow:0 -2px 10px rgba(0,0,0,.08);z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
   .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px 6px;color:#999;font-size:10px;cursor:pointer;border:none;background:none;text-decoration:none}
   .nav-item.active{color:#2c7a5c}
   .nav-item svg{width:22px;height:22px;margin-bottom:2px}
   .nav-item span{font-weight:600}
-  .spacer{height:80px}
+  .scroll-hint{text-align:center;font-size:11px;color:#999;padding:4px 0}
   @media(min-width:480px){body{max-width:480px;margin:0 auto;background:#e0e5eb}.bottom-nav{max-width:480px;left:50%;transform:translateX(-50%)}}
 </style>
 </head>
 <body>
 <div class="header">
-  <div class="header-top"><h1>実績記録</h1><span class="user-name" id="headerUser">--</span></div>
+  <div class="header-top"><h1>居宅介護サービス提供実績記録票</h1><span class="user-name" id="headerUser">--</span></div>
   <div class="month-nav">
     <button onclick="changeMonth(-1)">◀</button>
     <span class="current-month" id="currentMonth"></span>
     <button onclick="changeMonth(1)">▶</button>
   </div>
 </div>
-<div class="page-tabs">
-  <button class="page-tab active" onclick="switchPage(this,'calendar')">カレンダー</button>
-  <button class="page-tab" onclick="switchPage(this,'list')">一覧</button>
-  <button class="page-tab" onclick="switchPage(this,'summary')">月間集計</button>
-</div>
-<div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#2196f3"></div>移動</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div>居宅</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#ff9800"></div>家事</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#9c27b0"></div>通院</div>
-</div>
-<div class="calendar">
-  <div class="cal-weekdays"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>
-  <div class="cal-grid" id="calGrid"></div>
-</div>
 
-<!-- カレンダータブ -->
-<div class="section active" id="sec-calendar">
-  <div class="day-detail" id="dayDetail">
-    <div class="detail-header"><span id="detailDate"></span><span class="count-badge" id="detailCount"></span></div>
-    <div id="detailList"></div>
+<!-- 記録票ヘッダー情報 -->
+<div class="form-header">
+  <div class="form-title">居宅介護サービス提供実績記録票</div>
+  <div class="form-info">
+    <div class="form-info-row"><span class="form-info-label">受給者証番号:</span><span class="form-info-value" id="infoJukyusha">---</span></div>
+    <div class="form-info-row"><span class="form-info-label">事業所番号:</span><span class="form-info-value">1311102592</span></div>
+    <div class="form-info-row"><span class="form-info-label">氏名:</span><span class="form-info-value" id="infoName">---</span></div>
+    <div class="form-info-row"><span class="form-info-label">事業者:</span><span class="form-info-value">合同会社つばさ</span></div>
   </div>
 </div>
 
-<!-- 一覧タブ -->
-<div class="section" id="sec-list">
-  <div style="padding:16px 0">
-    <div class="detail-header"><span id="listTitle">今月の実績一覧</span></div>
-    <div id="listAll"></div>
-  </div>
+<!-- 横スクロール可能なテーブル -->
+<div class="scroll-hint">← 横にスクロールできます →</div>
+<div class="record-table-wrap">
+  <table class="record-table" id="recordTable">
+    <thead>
+      <tr>
+        <th rowspan="2" class="col-day">日<br>付</th>
+        <th rowspan="2" class="col-dow">曜<br>日</th>
+        <th rowspan="2" class="col-svc">サービス<br>内容</th>
+        <th colspan="3">居宅介護計画</th>
+        <th colspan="2">サービス提供時間</th>
+        <th rowspan="2" class="col-hours">算定<br>時間</th>
+        <th rowspan="2" class="col-check">利用者<br>確認</th>
+        <th rowspan="2" class="col-note">備考</th>
+      </tr>
+      <tr>
+        <th class="sub col-time">開始</th>
+        <th class="sub col-time">終了</th>
+        <th class="sub col-hours">時間数</th>
+        <th class="sub col-time">開始</th>
+        <th class="sub col-time">終了</th>
+      </tr>
+    </thead>
+    <tbody id="recordBody"></tbody>
+  </table>
 </div>
 
-<!-- 月間集計タブ -->
-<div class="section" id="sec-summary">
-  <div class="month-summary" style="margin:16px 0">
-    <h3 id="summaryTitle">月間集計</h3>
-    <div class="summary-grid" id="summaryGrid"></div>
-  </div>
-  <div class="month-summary" style="margin:16px 0">
-    <h3>サービス種類別</h3>
-    <div id="summaryByType"></div>
-  </div>
+<!-- 集計欄 -->
+<div class="form-footer">
+  <div class="summary-title">月間集計</div>
+  <table class="summary-table">
+    <tr><th></th><th>計画時間数計</th><th>算定時間数計</th></tr>
+    <tr><th>居宅における身体介護</th><td id="sumBodyPlan">0.0</td><td id="sumBodyActual">0.0</td></tr>
+    <tr><th>家事援助</th><td id="sumHousePlan">0.0</td><td id="sumHouseActual">0.0</td></tr>
+    <tr><th>通院介護（身体介護を伴う）</th><td id="sumHospBodyPlan">0.0</td><td id="sumHospBodyActual">0.0</td></tr>
+    <tr><th>通院介護（身体介護を伴わない）</th><td id="sumHospNoPlan">0.0</td><td id="sumHospNoActual">0.0</td></tr>
+    <tr class="total-row"><th>合計</th><td id="sumTotalPlan">0.0</td><td id="sumTotalActual">0.0</td></tr>
+  </table>
 </div>
 
-<!-- 確認モーダル -->
-<div class="modal-overlay" id="confirmModal">
-  <div class="modal">
-    <h3>実績確認</h3>
-    <div id="confirmDetail"></div>
-    <div class="sign-area" id="signArea">タップして確認サインをする</div>
-    <div class="modal-buttons">
-      <button class="modal-btn cancel" onclick="closeModal()">閉じる</button>
-      <button class="modal-btn confirm" id="confirmBtn" onclick="doConfirm()">✓ 確認済みにする</button>
-    </div>
-  </div>
+<!-- アクションボタン -->
+<div class="action-bar">
+  <button class="action-btn secondary" onclick="confirmAllPending()">✓ 未確認を全て確認</button>
+  <button class="action-btn primary" onclick="exportPDF()">📄 PDF出力</button>
 </div>
 
 <div class="spacer"></div>
@@ -185,22 +167,28 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ==========================================
 function pad(n){return n<10?'0'+n:''+n}
 function ds(y,m,d){return`${y}-${pad(m)}-${pad(d)}`}
-function fmtTime(t){if(!t)return'--:--';return t.substring(0,5)}
-function fmtD(d){
-  if(!d)return'';
-  const dt=new Date(d+'T00:00:00');
-  const wd=['日','月','火','水','木','金','土'];
-  return `${dt.getMonth()+1}月${dt.getDate()}日（${wd[dt.getDay()]}）`;
+function fmtTime(t){if(!t)return'';return t.substring(0,5)}
+
+// サービス内容の分類
+function svcType(task) {
+  if (!task) return { name:'', category:'body', label:'身体' };
+  const s = task.toString().trim();
+  if (s.includes('居宅') || s.includes('身体')) return { name:'身体介護', category:'body', label:'身体' };
+  if (s.includes('家事')) return { name:'家事援助', category:'house', label:'家事' };
+  if (s.includes('通院')) return { name:'通院介護', category:'hospital', label:'通院' };
+  if (s.includes('移動')) return { name:'移動支援', category:'mobility', label:'移動' };
+  return { name: s, category:'body', label:'身体' };
 }
-function taskInfo(t) {
-  if (!t) return { name:'その他', icon:'📋', color:'#888', cls:'other' };
-  const s = t.toString().trim();
-  if (s.includes('移動')) return { name:'移動支援', icon:'🚶', color:'#2196f3', cls:'mobility' };
-  if (s.includes('居宅')) return { name:'居宅介護', icon:'🏠', color:'#4caf50', cls:'home' };
-  if (s.includes('家事')) return { name:'家事援助', icon:'🧹', color:'#ff9800', cls:'housework' };
-  if (s.includes('通院')) return { name:'通院等介助', icon:'🏥', color:'#9c27b0', cls:'hospital' };
-  return { name:s, icon:'📋', color:'#888', cls:'other' };
+
+// 時間計算（HH:MM → 小数時間）
+function calcHours(start, end) {
+  if (!start || !end) return 0;
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  const mins = (eh * 60 + em) - (sh * 60 + sm);
+  return Math.max(0, mins / 60);
 }
+
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -212,9 +200,9 @@ function toast(msg) {
 // ==========================================
 const clientName = sessionStorage.getItem('loggedInClient') || '';
 const displayName = sessionStorage.getItem('loggedInName') || '';
-let cYear, cMon, selDate, curPage = 'calendar';
-let recordData = {}; // { 'YYYY-MM-DD': [ { id, task, start, end, helper, destination, confirmed, confirmed_at, ... } ] }
-let confirmTarget = null;
+const beneficiaryNumber = sessionStorage.getItem('beneficiaryNumber') || '';
+let cYear, cMon;
+let recordItems = []; // [ { id, date, day, dow, task, svc, planStart, planEnd, planHours, actualStart, actualEnd, actualHours, confirmed, note } ]
 
 // ==========================================
 // 初期化
@@ -226,65 +214,77 @@ async function init() {
     return;
   }
   document.getElementById('headerUser').textContent = displayName + ' さん';
+  document.getElementById('infoName').textContent = displayName;
+  document.getElementById('infoJukyusha').textContent = beneficiaryNumber || '---';
 
   const now = new Date();
   cYear = now.getFullYear();
   cMon = now.getMonth() + 1;
-  selDate = now.toISOString().slice(0,10);
   document.getElementById('currentMonth').textContent = `${cYear}年${cMon}月`;
 
   await loadRecords();
-  renderCalendar();
-  renderDayDetail();
+  renderTable();
+  renderSummary();
   console.log('=== records.html init完了 ===');
 }
 
 // ==========================================
-// データ取得（scheduleテーブルから実績として読み込み）
+// データ取得
 // ==========================================
 async function loadRecords() {
   const startDate = ds(cYear, cMon, 1);
   const endDate = ds(cYear, cMon, new Date(cYear, cMon, 0).getDate());
 
   try {
-    // まずschedule_web_v VIEWを試行（ヘルパー名付き）
+    // schedule_web_v（ヘルパー名付き）を試行
+    let rows = [];
     const { data, error } = await sb.from('schedule_web_v').select('*')
       .eq('client', clientName).gte('date', startDate).lte('date', endDate)
       .order('date').order('start_time');
 
-    recordData = {};
     if (error) {
-      // フォールバック
       const fb = await sb.from('schedule').select('*')
         .eq('client', clientName).gte('date', startDate).lte('date', endDate)
         .order('date').order('start_time');
       if (fb.error) throw fb.error;
-      if (fb.data) fb.data.forEach(row => {
-        const d = row.date;
-        if (!recordData[d]) recordData[d] = [];
-        recordData[d].push({
-          id: row.id, task: row.task || row.summary || '',
-          start: fmtTime(row.start_time), end: fmtTime(row.end_time),
-          helper: row.name || '', destination: row.destination || '',
-          confirmed: row.confirmed || false,
-          confirmed_at: row.confirmed_at || null,
-          summary: row.summary || ''
-        });
-      });
+      rows = fb.data || [];
     } else {
-      if (data) data.forEach(row => {
-        const d = row.date;
-        if (!recordData[d]) recordData[d] = [];
-        recordData[d].push({
-          id: row.id, task: row.task || row.summary || '',
-          start: fmtTime(row.start_time), end: fmtTime(row.end_time),
-          helper: row.name || '', destination: row.destination || '',
-          confirmed: row.confirmed || false,
-          confirmed_at: row.confirmed_at || null,
-          summary: row.summary || ''
-        });
-      });
+      rows = data || [];
     }
+
+    // 居宅介護のみフィルタ（移動支援は別フォーム）
+    recordItems = rows
+      .filter(r => {
+        const sv = svcType(r.task || r.summary);
+        return sv.category !== 'mobility';
+      })
+      .map(r => {
+        const dt = new Date(r.date + 'T00:00:00');
+        const dowNames = ['日','月','火','水','木','金','土'];
+        const sv = svcType(r.task || r.summary);
+        const start = fmtTime(r.start_time);
+        const end = fmtTime(r.end_time);
+        const hours = calcHours(start, end);
+        return {
+          id: r.id,
+          date: r.date,
+          day: dt.getDate(),
+          dow: dowNames[dt.getDay()],
+          dowIdx: dt.getDay(),
+          task: r.task || r.summary || '',
+          svc: sv,
+          planStart: start,
+          planEnd: end,
+          planHours: hours,
+          actualStart: start, // 初期値は計画と同じ
+          actualEnd: end,
+          actualHours: hours,
+          confirmed: r.confirmed || false,
+          note: r.destination || ''
+        };
+      });
+
+    console.log('実績データ:', recordItems.length, '件（居宅介護）');
   } catch (ex) {
     console.error('データ取得エラー:', ex);
     toast('データの取得に失敗しました');
@@ -292,326 +292,247 @@ async function loadRecords() {
 }
 
 // ==========================================
-// カレンダー描画
+// テーブル描画
 // ==========================================
-function renderCalendar() {
-  const g = document.getElementById('calGrid');
-  g.innerHTML = '';
-  const f = new Date(cYear, cMon-1, 1);
-  const sd = f.getDay();
+function renderTable() {
+  const tbody = document.getElementById('recordBody');
   const dim = new Date(cYear, cMon, 0).getDate();
-  const pd = new Date(cYear, cMon-1, 0).getDate();
-  const td = new Date().toISOString().slice(0,10);
-  const tc = Math.ceil((sd+dim)/7)*7;
+  const dowNames = ['日','月','火','水','木','金','土'];
 
-  for (let i = 0; i < tc; i++) {
-    let day, d2, ot = false;
-    if (i < sd) { day=pd-sd+i+1; const pm=cMon-1<1?12:cMon-1,py=cMon-1<1?cYear-1:cYear; d2=ds(py,pm,day); ot=true; }
-    else if (i-sd >= dim) { day=i-sd-dim+1; const nm=cMon+1>12?1:cMon+1,ny=cMon+1>12?cYear+1:cYear; d2=ds(ny,nm,day); ot=true; }
-    else { day=i-sd+1; d2=ds(cYear,cMon,day); }
+  let html = '';
+  for (let d = 1; d <= dim; d++) {
+    const dateStr = ds(cYear, cMon, d);
+    const dt = new Date(dateStr + 'T00:00:00');
+    const dowIdx = dt.getDay();
+    const dow = dowNames[dowIdx];
+    const dowClass = dowIdx === 0 ? 'sun' : dowIdx === 6 ? 'sat' : '';
 
-    const c = document.createElement('div');
-    c.className = 'cal-day';
-    if (ot) c.classList.add('other-month');
-    if (d2===td) c.classList.add('today');
-    if (d2===selDate) c.classList.add('selected');
-    c.dataset.date = d2;
-    c.onclick = () => selectDate(d2);
+    // この日の実績データ
+    const dayItems = recordItems.filter(r => r.date === dateStr);
 
-    const n = document.createElement('div');
-    n.className = 'day-num';
-    n.textContent = day;
-    c.appendChild(n);
-
-    // ドット表示
-    const dots = document.createElement('div');
-    dots.className = 'day-dots';
-    if (recordData[d2]) {
-      const types = [...new Set(recordData[d2].map(s => taskInfo(s.task).cls))];
-      types.forEach(cls => {
-        const d = document.createElement('div');
-        d.className = 'day-dot';
-        const colors = {home:'#4caf50',mobility:'#2196f3',housework:'#ff9800',hospital:'#9c27b0',other:'#888'};
-        d.style.background = colors[cls] || '#888';
-        dots.appendChild(d);
+    if (dayItems.length === 0) {
+      // データなし行
+      html += `<tr>
+        <td class="col-day ${dowClass}">${d}</td>
+        <td class="col-dow ${dowClass}">${dow}</td>
+        <td class="col-svc"></td>
+        <td class="col-time"></td><td class="col-time"></td><td class="col-hours"></td>
+        <td class="col-time"></td><td class="col-time"></td>
+        <td class="col-hours"></td>
+        <td class="col-check"></td>
+        <td class="col-note"></td>
+      </tr>`;
+    } else {
+      dayItems.forEach((item, idx) => {
+        const checkIcon = item.confirmed
+          ? '<span class="checkmark">✓</span>'
+          : '<span class="checkmark unchecked">□</span>';
+        html += `<tr class="has-data">
+          ${idx === 0 ? `<td class="col-day ${dowClass}" rowspan="${dayItems.length}">${d}</td><td class="col-dow ${dowClass}" rowspan="${dayItems.length}">${dow}</td>` : ''}
+          <td class="col-svc">${item.svc.label}</td>
+          <td class="col-time">${item.planStart}</td>
+          <td class="col-time">${item.planEnd}</td>
+          <td class="col-hours">${item.planHours.toFixed(1)}</td>
+          <td class="col-time">${item.actualStart}</td>
+          <td class="col-time">${item.actualEnd}</td>
+          <td class="col-hours">${item.actualHours.toFixed(1)}</td>
+          <td class="col-check check-cell" onclick="toggleConfirm('${item.id}')">${checkIcon}</td>
+          <td class="col-note">${item.note}</td>
+        </tr>`;
       });
-
-      // 全件確認済みならチェックマーク
-      const allConfirmed = recordData[d2].every(r => r.confirmed);
-      if (allConfirmed && recordData[d2].length > 0) {
-        const check = document.createElement('div');
-        check.className = 'day-check';
-        check.textContent = '✓';
-        check.style.color = '#2e7d32';
-        c.appendChild(check);
-      }
     }
-    c.appendChild(dots);
-    g.appendChild(c);
   }
-}
-
-function selectDate(d) {
-  selDate = d;
-  document.querySelectorAll('.cal-day').forEach(c => c.classList.toggle('selected', c.dataset.date===d));
-  renderDayDetail();
-}
-
-async function changeMonth(dir) {
-  cMon += dir;
-  if (cMon<1){cMon=12;cYear--} if(cMon>12){cMon=1;cYear++}
-  document.getElementById('currentMonth').textContent = `${cYear}年${cMon}月`;
-  selDate = ds(cYear, cMon, 1);
-  await loadRecords();
-  renderCalendar();
-  renderDayDetail();
-  renderList();
-  renderSummary();
+  tbody.innerHTML = html;
 }
 
 // ==========================================
-// カレンダータブ: 日別詳細
+// レ点トグル
 // ==========================================
-function renderDayDetail() {
-  document.getElementById('detailDate').textContent = fmtD(selDate);
-  const items = recordData[selDate] || [];
-  document.getElementById('detailCount').textContent = items.length ? `${items.length}件` : '';
-  const l = document.getElementById('detailList');
-  if (!items.length) { l.innerHTML = '<div class="empty-msg">この日の実績はありません</div>'; return; }
-  l.innerHTML = items.map((i, idx) => {
-    const ti = taskInfo(i.task);
-    const statusClass = i.confirmed ? 'confirmed' : 'pending';
-    const statusText = i.confirmed ? '確認済み' : '未確認';
-    return `<div class="record-card" onclick="openConfirmModal('${selDate}',${idx})">
-      <div class="svc-bar" style="background:${ti.color}"></div>
-      <div class="record-body">
-        <div class="record-icon" style="background:${ti.color}20">${ti.icon}</div>
-        <div class="record-info">
-          <div class="record-name">${ti.name}</div>
-          <div class="record-time">${i.start} 〜 ${i.end}</div>
-          ${i.helper ? `<div class="record-helper">担当: ${i.helper}</div>` : ''}
-          ${i.destination ? `<div class="record-dest">📍 ${i.destination}</div>` : ''}
-          ${i.summary && i.summary !== i.task ? `<div class="record-note">${i.summary}</div>` : ''}
-        </div>
-      </div>
-      <div class="record-status"><span class="status-badge ${statusClass}">${statusText}</span></div>
-    </div>`;
-  }).join('');
+async function toggleConfirm(id) {
+  const item = recordItems.find(r => r.id == id);
+  if (!item) return;
 
-  // 未確認があれば一括確認ボタン
-  const pending = items.filter(i => !i.confirmed);
-  if (pending.length > 0) {
-    l.innerHTML += `<button class="confirm-btn" onclick="confirmAllDay()">✓ この日の実績を全て確認する</button>`;
-  } else if (items.length > 0) {
-    l.innerHTML += `<button class="confirm-btn done" disabled>✓ この日の実績は全て確認済みです</button>`;
-  }
-}
+  const newState = !item.confirmed;
+  item.confirmed = newState;
 
-// ==========================================
-// 一覧タブ
-// ==========================================
-function renderList() {
-  const l = document.getElementById('listAll');
-  document.getElementById('listTitle').textContent = `${cMon}月の実績一覧`;
-  const allDates = Object.keys(recordData).sort();
-  if (!allDates.length) { l.innerHTML = '<div class="empty-msg">今月の実績はありません</div>'; return; }
-
-  l.innerHTML = allDates.map(date => {
-    const items = recordData[date];
-    return `<div style="margin-bottom:16px">
-      <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:#555">${fmtD(date)}</div>
-      ${items.map((i, idx) => {
-        const ti = taskInfo(i.task);
-        const statusClass = i.confirmed ? 'confirmed' : 'pending';
-        const statusText = i.confirmed ? '確認済' : '未確認';
-        return `<div class="record-card" onclick="openConfirmModal('${date}',${idx})" style="margin-bottom:6px">
-          <div class="svc-bar" style="background:${ti.color}"></div>
-          <div class="record-body" style="padding:10px 12px">
-            <div class="record-icon" style="background:${ti.color}20;width:32px;height:32px;font-size:14px">${ti.icon}</div>
-            <div class="record-info">
-              <div style="font-size:13px;font-weight:600">${ti.name}　${i.start}〜${i.end}</div>
-              ${i.helper ? `<div style="font-size:11px;color:#1a5276">${i.helper}</div>` : ''}
-            </div>
-          </div>
-          <div class="record-status"><span class="status-badge ${statusClass}" style="font-size:10px">${statusText}</span></div>
-        </div>`;
-      }).join('')}
-    </div>`;
-  }).join('');
-}
-
-// ==========================================
-// 月間集計タブ
-// ==========================================
-function renderSummary() {
-  document.getElementById('summaryTitle').textContent = `${cMon}月 月間集計`;
-  const allItems = Object.values(recordData).flat();
-  const total = allItems.length;
-  const confirmed = allItems.filter(i => i.confirmed).length;
-
-  // 合計時間計算
-  let totalMinutes = 0;
-  allItems.forEach(i => {
-    if (i.start && i.end && i.start !== '--:--' && i.end !== '--:--') {
-      const [sh, sm] = i.start.split(':').map(Number);
-      const [eh, em] = i.end.split(':').map(Number);
-      totalMinutes += (eh * 60 + em) - (sh * 60 + sm);
-    }
-  });
-  const totalHours = Math.floor(totalMinutes / 60);
-  const totalMins = totalMinutes % 60;
-
-  document.getElementById('summaryGrid').innerHTML = `
-    <div class="summary-card"><div class="label">サービス回数</div><div class="value">${total}<span class="unit">回</span></div></div>
-    <div class="summary-card"><div class="label">合計時間</div><div class="value">${totalHours}<span class="unit">時間</span>${totalMins ? `${totalMins}<span class="unit">分</span>` : ''}</div></div>
-    <div class="summary-card"><div class="label">確認済み</div><div class="value">${confirmed}<span class="unit">件</span></div></div>
-    <div class="summary-card"><div class="label">未確認</div><div class="value">${total - confirmed}<span class="unit">件</span></div></div>
-  `;
-
-  // サービス種類別
-  const byType = {};
-  allItems.forEach(i => {
-    const ti = taskInfo(i.task);
-    if (!byType[ti.name]) byType[ti.name] = { count: 0, minutes: 0, color: ti.color, icon: ti.icon };
-    byType[ti.name].count++;
-    if (i.start && i.end && i.start !== '--:--' && i.end !== '--:--') {
-      const [sh, sm] = i.start.split(':').map(Number);
-      const [eh, em] = i.end.split(':').map(Number);
-      byType[ti.name].minutes += (eh * 60 + em) - (sh * 60 + sm);
-    }
-  });
-
-  document.getElementById('summaryByType').innerHTML = Object.entries(byType).map(([name, d]) => {
-    const h = Math.floor(d.minutes / 60);
-    const m = d.minutes % 60;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eee">
-      <div style="width:36px;height:36px;border-radius:10px;background:${d.color}20;display:flex;align-items:center;justify-content:center;font-size:16px">${d.icon}</div>
-      <div style="flex:1"><div style="font-size:14px;font-weight:600">${name}</div><div style="font-size:12px;color:#888">${d.count}回 ・ ${h}時間${m ? m + '分' : ''}</div></div>
-    </div>`;
-  }).join('') || '<div class="empty-msg">データがありません</div>';
-}
-
-// ==========================================
-// 確認モーダル
-// ==========================================
-function openConfirmModal(date, idx) {
-  const items = recordData[date];
-  if (!items || !items[idx]) return;
-  confirmTarget = { date, idx, item: items[idx] };
-
-  const i = items[idx];
-  const ti = taskInfo(i.task);
-  document.getElementById('confirmDetail').innerHTML = `
-    <div style="text-align:center;margin-bottom:12px">
-      <div style="font-size:16px;font-weight:700">${fmtD(date)}</div>
-      <div style="font-size:20px;margin:8px 0">${ti.icon} ${ti.name}</div>
-      <div style="font-size:15px;color:#555">${i.start} 〜 ${i.end}</div>
-      ${i.helper ? `<div style="font-size:14px;color:#1a5276;margin-top:4px">担当: ${i.helper}</div>` : ''}
-      ${i.destination ? `<div style="font-size:13px;margin-top:8px;padding:8px 12px;background:#f8f9fa;border-radius:8px">📍 ${i.destination}</div>` : ''}
-    </div>`;
-
-  const signArea = document.getElementById('signArea');
-  const confirmBtn = document.getElementById('confirmBtn');
-  if (i.confirmed) {
-    signArea.className = 'sign-area signed';
-    signArea.textContent = `✓ ${i.confirmed_at ? new Date(i.confirmed_at).toLocaleString('ja-JP') + 'に確認済み' : '確認済み'}`;
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = '確認済み';
-    confirmBtn.className = 'modal-btn confirm';
-    confirmBtn.style.background = '#e8f5e9';
-    confirmBtn.style.color = '#2e7d32';
-  } else {
-    signArea.className = 'sign-area';
-    signArea.textContent = 'タップして確認サインをする';
-    signArea.onclick = () => {
-      signArea.className = 'sign-area signed';
-      signArea.textContent = `✓ ${displayName} 確認`;
-      signArea.onclick = null;
-    };
-    confirmBtn.disabled = false;
-    confirmBtn.textContent = '✓ 確認済みにする';
-    confirmBtn.className = 'modal-btn confirm';
-    confirmBtn.style.background = '#1a5276';
-    confirmBtn.style.color = '#fff';
-  }
-
-  document.getElementById('confirmModal').classList.add('show');
-}
-
-function closeModal() {
-  document.getElementById('confirmModal').classList.remove('show');
-  confirmTarget = null;
-}
-
-async function doConfirm() {
-  if (!confirmTarget) return;
-  const { date, idx, item } = confirmTarget;
-
+  // Supabase更新（confirmedカラムがあれば）
   try {
-    // Supabase の schedule テーブルに confirmed フラグを更新
-    // ※ confirmed カラムが無い場合はエラーになるが、今後テーブル拡張で対応
-    const { error } = await sb.from('schedule')
-      .update({ confirmed: true, confirmed_at: new Date().toISOString() })
-      .eq('id', item.id);
-
-    if (error) {
-      console.warn('確認更新エラー（カラム未作成の可能性）:', error);
-      // カラムが無くてもローカルでは確認済みにする
-    }
-
-    // ローカルデータを更新
-    if (recordData[date] && recordData[date][idx]) {
-      recordData[date][idx].confirmed = true;
-      recordData[date][idx].confirmed_at = new Date().toISOString();
-    }
-
-    closeModal();
-    renderCalendar();
-    renderDayDetail();
-    renderList();
-    renderSummary();
-    toast('実績を確認しました');
+    await sb.from('schedule').update({
+      confirmed: newState,
+      confirmed_at: newState ? new Date().toISOString() : null
+    }).eq('id', id);
   } catch (ex) {
-    console.error('確認処理エラー:', ex);
-    toast('確認処理に失敗しました');
+    console.warn('確認更新エラー:', ex);
   }
+
+  renderTable();
+  renderSummary();
+  toast(newState ? '✓ 確認しました' : '確認を取り消しました');
 }
 
-async function confirmAllDay() {
-  const items = recordData[selDate] || [];
-  const pending = items.filter(i => !i.confirmed);
-  if (!pending.length) return;
+// ==========================================
+// 未確認を全て確認
+// ==========================================
+async function confirmAllPending() {
+  const pending = recordItems.filter(r => !r.confirmed);
+  if (!pending.length) { toast('全て確認済みです'); return; }
 
   for (const item of pending) {
-    try {
-      await sb.from('schedule')
-        .update({ confirmed: true, confirmed_at: new Date().toISOString() })
-        .eq('id', item.id);
-    } catch (ex) {
-      console.warn('一括確認エラー:', ex);
-    }
     item.confirmed = true;
-    item.confirmed_at = new Date().toISOString();
+    try {
+      await sb.from('schedule').update({
+        confirmed: true, confirmed_at: new Date().toISOString()
+      }).eq('id', item.id);
+    } catch (ex) { console.warn('一括確認エラー:', ex); }
   }
 
-  renderCalendar();
-  renderDayDetail();
-  renderList();
+  renderTable();
   renderSummary();
-  toast(`${fmtD(selDate)}の実績を全て確認しました`);
+  toast(`${pending.length}件を確認しました`);
 }
 
 // ==========================================
-// ページ切替
+// 集計
 // ==========================================
-function switchPage(tab, page) {
-  curPage = page;
-  document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
-  tab.classList.add('active');
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('sec-'+page).classList.add('active');
-  if (page === 'list') renderList();
-  if (page === 'summary') renderSummary();
+function renderSummary() {
+  const cats = { body: { plan: 0, actual: 0 }, house: { plan: 0, actual: 0 }, hospBody: { plan: 0, actual: 0 }, hospNo: { plan: 0, actual: 0 } };
+
+  recordItems.forEach(item => {
+    const c = item.svc.category;
+    if (c === 'body' || c === 'home') {
+      cats.body.plan += item.planHours;
+      cats.body.actual += item.actualHours;
+    } else if (c === 'house' || c === 'housework') {
+      cats.house.plan += item.planHours;
+      cats.house.actual += item.actualHours;
+    } else if (c === 'hospital') {
+      // TODO: 身体介護を伴う/伴わないの区別
+      cats.hospBody.plan += item.planHours;
+      cats.hospBody.actual += item.actualHours;
+    }
+  });
+
+  document.getElementById('sumBodyPlan').textContent = cats.body.plan.toFixed(1);
+  document.getElementById('sumBodyActual').textContent = cats.body.actual.toFixed(1);
+  document.getElementById('sumHousePlan').textContent = cats.house.plan.toFixed(1);
+  document.getElementById('sumHouseActual').textContent = cats.house.actual.toFixed(1);
+  document.getElementById('sumHospBodyPlan').textContent = cats.hospBody.plan.toFixed(1);
+  document.getElementById('sumHospBodyActual').textContent = cats.hospBody.actual.toFixed(1);
+  document.getElementById('sumHospNoPlan').textContent = cats.hospNo.plan.toFixed(1);
+  document.getElementById('sumHospNoActual').textContent = cats.hospNo.actual.toFixed(1);
+
+  const totalPlan = cats.body.plan + cats.house.plan + cats.hospBody.plan + cats.hospNo.plan;
+  const totalActual = cats.body.actual + cats.house.actual + cats.hospBody.actual + cats.hospNo.actual;
+  document.getElementById('sumTotalPlan').textContent = totalPlan.toFixed(1);
+  document.getElementById('sumTotalActual').textContent = totalActual.toFixed(1);
+}
+
+// ==========================================
+// 月切替
+// ==========================================
+async function changeMonth(dir) {
+  cMon += dir;
+  if (cMon < 1) { cMon = 12; cYear--; }
+  if (cMon > 12) { cMon = 1; cYear++; }
+  document.getElementById('currentMonth').textContent = `${cYear}年${cMon}月`;
+  await loadRecords();
+  renderTable();
+  renderSummary();
+}
+
+// ==========================================
+// PDF出力
+// ==========================================
+function exportPDF() {
+  const dim = new Date(cYear, cMon, 0).getDate();
+  const dowNames = ['日','月','火','水','木','金','土'];
+
+  let html = `<div style="width:1100px;font-family:'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif;padding:20px;background:#fff">`;
+  html += `<div style="text-align:center;font-size:16px;font-weight:700;margin-bottom:4px">居宅介護サービス提供実績記録票</div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px">`;
+  html += `<div>令和${cYear - 2018}年　${cMon}月</div>`;
+  html += `<div>事業所番号: 1311102592　合同会社つばさ</div>`;
+  html += `</div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px">`;
+  html += `<div>受給者証番号: ${beneficiaryNumber || '---'}　氏名: ${displayName}</div>`;
+  html += `<div>〒144-0051 東京都大田区西蒲田2丁目1-4　TEL.03-6314-3672</div>`;
+  html += `</div>`;
+
+  html += `<table style="width:100%;border-collapse:collapse;border:2px solid #333;font-size:10px">`;
+  html += `<tr>
+    <th style="border:1px solid #999;padding:3px;background:#e8e8e8;width:25px" rowspan="2">日付</th>
+    <th style="border:1px solid #999;padding:3px;background:#e8e8e8;width:20px" rowspan="2">曜日</th>
+    <th style="border:1px solid #999;padding:3px;background:#e8e8e8;width:50px" rowspan="2">サービス内容</th>
+    <th style="border:1px solid #999;padding:3px;background:#e8e8e8" colspan="3">居宅介護計画</th>
+    <th style="border:1px solid #999;padding:3px;background:#e8e8e8" colspan="2">サービス提供時間</th>
+    <th style="border:1px solid #999;padding:3px;background:#e8e8e8;width:35px" rowspan="2">算定時間</th>
+    <th style="border:1px solid #999;padding:3px;background:#e8e8e8;width:30px" rowspan="2">利用者確認</th>
+    <th style="border:1px solid #999;padding:3px;background:#e8e8e8" rowspan="2">備考</th>
+  </tr>
+  <tr>
+    <th style="border:1px solid #999;padding:2px;background:#f0f0f0;font-size:9px">開始</th>
+    <th style="border:1px solid #999;padding:2px;background:#f0f0f0;font-size:9px">終了</th>
+    <th style="border:1px solid #999;padding:2px;background:#f0f0f0;font-size:9px">時間数</th>
+    <th style="border:1px solid #999;padding:2px;background:#f0f0f0;font-size:9px">開始</th>
+    <th style="border:1px solid #999;padding:2px;background:#f0f0f0;font-size:9px">終了</th>
+  </tr>`;
+
+  for (let d = 1; d <= dim; d++) {
+    const dateStr = ds(cYear, cMon, d);
+    const dt = new Date(dateStr + 'T00:00:00');
+    const dow = dowNames[dt.getDay()];
+    const dowColor = dt.getDay() === 0 ? '#e74c3c' : dt.getDay() === 6 ? '#2980b9' : '#333';
+    const dayItems = recordItems.filter(r => r.date === dateStr);
+
+    if (dayItems.length === 0) {
+      html += `<tr>
+        <td style="border:1px solid #ccc;padding:2px;text-align:center;color:${dowColor}">${d}</td>
+        <td style="border:1px solid #ccc;padding:2px;text-align:center;color:${dowColor}">${dow}</td>
+        <td style="border:1px solid #ccc;padding:2px"></td>
+        <td style="border:1px solid #ccc;padding:2px"></td><td style="border:1px solid #ccc;padding:2px"></td><td style="border:1px solid #ccc;padding:2px"></td>
+        <td style="border:1px solid #ccc;padding:2px"></td><td style="border:1px solid #ccc;padding:2px"></td>
+        <td style="border:1px solid #ccc;padding:2px"></td>
+        <td style="border:1px solid #ccc;padding:2px"></td>
+        <td style="border:1px solid #ccc;padding:2px"></td>
+      </tr>`;
+    } else {
+      dayItems.forEach((item, idx) => {
+        const check = item.confirmed ? '✓' : '';
+        html += `<tr>
+          ${idx === 0 ? `<td style="border:1px solid #ccc;padding:2px;text-align:center;color:${dowColor}" rowspan="${dayItems.length}">${d}</td><td style="border:1px solid #ccc;padding:2px;text-align:center;color:${dowColor}" rowspan="${dayItems.length}">${dow}</td>` : ''}
+          <td style="border:1px solid #ccc;padding:2px;font-size:9px">${item.svc.label}</td>
+          <td style="border:1px solid #ccc;padding:2px;text-align:center">${item.planStart}</td>
+          <td style="border:1px solid #ccc;padding:2px;text-align:center">${item.planEnd}</td>
+          <td style="border:1px solid #ccc;padding:2px;text-align:center">${item.planHours.toFixed(1)}</td>
+          <td style="border:1px solid #ccc;padding:2px;text-align:center">${item.actualStart}</td>
+          <td style="border:1px solid #ccc;padding:2px;text-align:center">${item.actualEnd}</td>
+          <td style="border:1px solid #ccc;padding:2px;text-align:center">${item.actualHours.toFixed(1)}</td>
+          <td style="border:1px solid #ccc;padding:2px;text-align:center;font-weight:700;color:#2e7d32">${check}</td>
+          <td style="border:1px solid #ccc;padding:2px;font-size:9px">${item.note}</td>
+        </tr>`;
+      });
+    }
+  }
+  html += `</table></div>`;
+
+  document.open();
+  document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=0.35,maximum-scale=2">
+    <title>居宅介護実績記録票 ${cYear}年${cMon}月 - ${displayName}</title>
+    <style>
+      body{margin:0;background:#f0f0f0}
+      .pdf-toolbar{position:sticky;top:0;z-index:10;background:#1a5276;padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:center}
+      .pdf-toolbar button{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none}
+      .pdf-btn-back{background:#fff;color:#1a5276}
+      .pdf-btn-print{background:#fff3;color:#fff;border:2px solid #fff !important}
+      .pdf-content{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px}
+      @media print{.pdf-toolbar{display:none !important}.pdf-content{padding:0;overflow:visible}body{background:#fff}@page{size:A4 portrait;margin:8mm}}
+    </style></head><body>
+    <div class="pdf-toolbar">
+      <button class="pdf-btn-back" onclick="location.href='records.html'">← 戻る</button>
+      <button class="pdf-btn-print" onclick="window.print()">🖨 印刷 / PDF保存</button>
+    </div>
+    <div class="pdf-content">${html}</div></body></html>`);
+  document.close();
 }
 
 // 初期化
