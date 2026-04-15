@@ -1049,9 +1049,9 @@ async function generatePDF() {
         const items = c.dateStr ? (monthData[c.dateStr] || []) : [];
         html += `<td style="border:1px solid #999;padding:3px 6px;vertical-align:top;background:${bg};height:55px">`;
         items.forEach(item => {
-          const h = item.helper && item.helper !== '担当未設定' ? item.helper : '';
+          const h = item.helper || '未定';
           html += `<div style="font-size:10px;margin-bottom:3px">`;
-          if (h) html += `<span style="font-weight:600">${h}</span><br>`;
+          html += `<span style="font-weight:600">${h}</span><br>`;
           html += `<span>${item.start}〜${item.end}</span>`;
           html += `</div>`;
         });
@@ -1061,13 +1061,30 @@ async function generatePDF() {
     }
     html += `</table></div>`;
 
-    const printWin = window.open('', '_blank', 'width=1200,height=800');
-    printWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${cYear}年${cMon}月 スケジュール - ${displayName}</title>
-      <style>@media print{body{margin:0}@page{size:A4 landscape;margin:10mm}}</style></head><body>${html}
-      <script>window.onload=function(){window.print();}<\/script></body></html>`);
-    printWin.document.close();
+    // スマホ対応: 同一ウィンドウにプレビュー表示
+    const fullHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=0.35,maximum-scale=2">
+      <title>${cYear}年${cMon}月 スケジュール - ${displayName}</title>
+      <style>
+        body{margin:0;background:#f0f0f0}
+        .pdf-toolbar{position:sticky;top:0;z-index:10;background:#2c7a5c;padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:center}
+        .pdf-toolbar button{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none}
+        .pdf-btn-back{background:#fff;color:#2c7a5c}
+        .pdf-btn-print{background:#fff3;color:#fff;border:2px solid #fff !important}
+        .pdf-content{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px}
+        @media print{.pdf-toolbar{display:none !important}.pdf-content{padding:0;overflow:visible}body{background:#fff}@page{size:A4 landscape;margin:10mm}}
+      </style></head><body>
+      <div class="pdf-toolbar">
+        <button class="pdf-btn-back" onclick="location.href='schedule.html'">← 戻る</button>
+        <button class="pdf-btn-print" onclick="window.print()">🖨 印刷 / PDF保存</button>
+      </div>
+      <div class="pdf-content">${html}</div></body></html>`;
 
-    toast('印刷画面を開きました（PDFで保存できます）');
+    // Blob URLで同一タブに表示（スマホでもポップアップブロックされない）
+    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.location.href = url;
+
+    toast('印刷プレビューを表示中');
   } catch (ex) {
     console.error('PDF生成エラー:', ex);
     toast('PDF生成に失敗しました');
