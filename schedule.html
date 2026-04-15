@@ -1061,8 +1061,9 @@ async function generatePDF() {
     }
     html += `</table></div>`;
 
-    // スマホ対応: 同一ウィンドウにプレビュー表示
-    const fullHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=0.35,maximum-scale=2">
+    // スマホ対応: document.writeで同一ページを書き換え
+    document.open();
+    document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=0.35,maximum-scale=2">
       <title>${cYear}年${cMon}月 スケジュール - ${displayName}</title>
       <style>
         body{margin:0;background:#f0f0f0}
@@ -1077,18 +1078,11 @@ async function generatePDF() {
         <button class="pdf-btn-back" onclick="location.href='schedule.html'">← 戻る</button>
         <button class="pdf-btn-print" onclick="window.print()">🖨 印刷 / PDF保存</button>
       </div>
-      <div class="pdf-content">${html}</div></body></html>`;
-
-    // Blob URLで同一タブに表示（スマホでもポップアップブロックされない）
-    const blob = new Blob([fullHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    window.location.href = url;
-
-    toast('印刷プレビューを表示中');
+      <div class="pdf-content">${html}</div></body></html>`);
+    document.close();
   } catch (ex) {
     console.error('PDF生成エラー:', ex);
     toast('PDF生成に失敗しました');
-  } finally {
     btn.disabled = false;
     btn.textContent = '📄 この月のスケジュールをPDFで出力';
   }
