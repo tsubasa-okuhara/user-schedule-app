@@ -268,7 +268,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ==========================================
 // GAS Web App連携（スプレッドシート同期）
 // ==========================================
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxlYmQHfINWY2szN_S1XBPhiYaj9-7ocLtE5l2w2pagr4ajdp9pytF5NsFQOY_vz6Px/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbweBg7GrNxAYmf7NW5u6oYbnR7b2e7aax9c6b5iceYHpg15IC6ebGH2Khoza93LDRE/exec';
 
 async function syncToSheet(payload) {
   if (!GAS_WEB_APP_URL) { console.log('GAS URL未設定 - スプレッドシート同期スキップ'); return; }

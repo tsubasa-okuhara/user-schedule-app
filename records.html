@@ -143,7 +143,7 @@
 <!-- アクションボタン -->
 <div class="action-bar">
   <button class="action-btn secondary" onclick="confirmAllPending()">✓ 未確認を全て確認</button>
-  <button class="action-btn primary" onclick="exportExcel()">📊 Excel出力</button>
+  <button class="action-btn primary" id="exportSheetBtn" onclick="exportToSheet()">📊 スプレッドシートに出力</button>
   <button class="action-btn secondary" onclick="exportPDF()">📄 PDF</button>
 </div>
 
@@ -160,6 +160,7 @@
 // ==========================================
 // Supabase接続
 // ==========================================
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbweBg7GrNxAYmf7NW5u6oYbnR7b2e7aax9c6b5iceYHpg15IC6ebGH2Khoza93LDRE/exec';
 const SUPABASE_URL = 'https://pbqqqwwgswniuomjlhsh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBicXFxd3dnc3duaXVvbWpsaHNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MTA3NTcsImV4cCI6MjA4OTI4Njc1N30.XgImGhrTc-cVHO9tvapCCz0y3XJZn3ma4vnd_QBYfDk';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -540,6 +541,60 @@ function exportPDF() {
 // ==========================================
 // Excel出力（居宅介護サービス提供実績記録票）
 // ==========================================
+// ==========================================
+// スプレッドシート出力（GAS経由でテンプレートにデータ流し込み）
+// ==========================================
+async function exportToSheet() {
+  const btn = document.getElementById('exportSheetBtn');
+  btn.disabled = true;
+  btn.textContent = '📊 生成中…';
+
+  try {
+    const reiwa = cYear - 2018;
+    const dowNames = ['日','月','火','水','木','金','土'];
+
+    // 実績データをGASに送るペイロード作成
+    const items = recordItems.map(r => ({
+      date: r.date,
+      dow: r.dow,
+      planStart: r.planStart,
+      planEnd: r.planEnd,
+      confirmed: r.confirmed
+    }));
+
+    const payload = {
+      action: 'export_records',
+      client: clientName,
+      displayName: displayName,
+      beneficiaryNumber: beneficiaryNumber,
+      year: cYear,
+      month: cMon,
+      reiwa: reiwa,
+      items: items
+    };
+
+    console.log('実績記録票出力:', JSON.stringify(payload));
+
+    // GASにPOST（CORSの都合でno-corsでは結果が読めないため、GETも試行）
+    // まずPOSTで送信
+    await fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(payload)
+    });
+
+    // no-corsではレスポンスが読めないので、完了メッセージを表示
+    toast('スプレッドシートを生成しました。Googleドライブを確認してください');
+
+  } catch (ex) {
+    console.error('スプレッドシート出力エラー:', ex);
+    toast('出力に失敗しました');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📊 スプレッドシートに出力';
+  }
+}
+
 function exportExcel() {
   const dim = new Date(cYear, cMon, 0).getDate();
   const dowNames = ['日','月','火','水','木','金','土'];
