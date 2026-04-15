@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>実績記録 - 利用者アプリ</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif;background:#f0f4f8;color:#333;min-height:100vh;-webkit-tap-highlight-color:transparent}
@@ -142,7 +143,8 @@
 <!-- アクションボタン -->
 <div class="action-bar">
   <button class="action-btn secondary" onclick="confirmAllPending()">✓ 未確認を全て確認</button>
-  <button class="action-btn primary" onclick="exportPDF()">📄 PDF出力</button>
+  <button class="action-btn primary" onclick="exportExcel()">📊 Excel出力</button>
+  <button class="action-btn secondary" onclick="exportPDF()">📄 PDF</button>
 </div>
 
 <div class="spacer"></div>
@@ -533,6 +535,104 @@ function exportPDF() {
     </div>
     <div class="pdf-content">${html}</div></body></html>`);
   document.close();
+}
+
+// ==========================================
+// Excel出力（居宅介護サービス提供実績記録票）
+// ==========================================
+function exportExcel() {
+  const dim = new Date(cYear, cMon, 0).getDate();
+  const dowNames = ['日','月','火','水','木','金','土'];
+  const reiwa = cYear - 2018;
+
+  // シートデータを配列で構築
+  const rows = [];
+
+  // ヘッダー部分
+  rows.push([`令和${reiwa}年`, '', `${cMon}月`, '', '', '居宅介護サービス提供実績記録票']);
+  rows.push(['受給者証番号', beneficiaryNumber || '', '', '', '支給決定障害者等氏名', displayName, '', '事業所番号', '1311102592']);
+  rows.push(['', '', '', '', '(障害児氏名)', '', '', '事業者及びその事業所', '合同会社つばさ']);
+  rows.push(['契約支給量', '', '', '', '', '', '', '所', '奥原　友美']);
+  rows.push([]); // 空行
+
+  // テーブルヘッダー
+  rows.push(['日付','曜日','サービス内容','開始時間','終了時間','計画時間数','開始時間','終了時間','算定時間数','利用者確認欄','備考']);
+  rows.push(['','','','(計画)','(計画)','','(実績)','(実績)','','','']);
+  const dataStartRow = rows.length; // 0-indexed
+
+  // 日別データ
+  for (let d = 1; d <= dim; d++) {
+    const dateStr = ds(cYear, cMon, d);
+    const dt = new Date(dateStr + 'T00:00:00');
+    const dow = dowNames[dt.getDay()];
+    const dayItems = recordItems.filter(r => r.date === dateStr);
+
+    if (dayItems.length === 0) {
+      rows.push([d, dow, '', '', '', '', '', '', '', '', '']);
+    } else {
+      dayItems.forEach((item, idx) => {
+        rows.push([
+          idx === 0 ? d : '',
+          idx === 0 ? dow : '',
+          item.svc.label,
+          item.planStart,
+          item.planEnd,
+          item.planHours,
+          item.actualStart,
+          item.actualEnd,
+          item.actualHours,
+          item.confirmed ? '✓' : '',
+          item.note
+        ]);
+      });
+    }
+  }
+
+  // 空行
+  rows.push([]);
+
+  // 集計部分
+  const cats = { body: { plan: 0, actual: 0 }, house: { plan: 0, actual: 0 }, hospBody: { plan: 0, actual: 0 }, hospNo: { plan: 0, actual: 0 } };
+  recordItems.forEach(item => {
+    const c = item.svc.category;
+    if (c === 'body' || c === 'home') { cats.body.plan += item.planHours; cats.body.actual += item.actualHours; }
+    else if (c === 'house' || c === 'housework') { cats.house.plan += item.planHours; cats.house.actual += item.actualHours; }
+    else if (c === 'hospital') { cats.hospBody.plan += item.planHours; cats.hospBody.actual += item.actualHours; }
+  });
+  const totalPlan = cats.body.plan + cats.house.plan + cats.hospBody.plan + cats.hospNo.plan;
+  const totalActual = cats.body.actual + cats.house.actual + cats.hospBody.actual + cats.hospNo.actual;
+
+  rows.push(['','','居宅における身体介護','','計画時間数計', cats.body.plan, '', '算定時間数計', cats.body.actual]);
+  rows.push(['','','通院介護（身体介護を伴う）','','', cats.hospBody.plan, '', '', cats.hospBody.actual]);
+  rows.push(['','','家事援助','','', cats.house.plan, '', '', cats.house.actual]);
+  rows.push(['','','通院介護（身体介護を伴わない）','','', cats.hospNo.plan, '', '', cats.hospNo.actual]);
+  rows.push(['','合計','','','', totalPlan, '', '', totalActual]);
+
+  // SheetJSでワークブック作成
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // 列幅設定
+  ws['!cols'] = [
+    { wch: 5 },  // 日付
+    { wch: 4 },  // 曜日
+    { wch: 14 }, // サービス内容
+    { wch: 8 },  // 開始(計画)
+    { wch: 8 },  // 終了(計画)
+    { wch: 8 },  // 計画時間数
+    { wch: 8 },  // 開始(実績)
+    { wch: 8 },  // 終了(実績)
+    { wch: 8 },  // 算定時間数
+    { wch: 8 },  // 利用者確認
+    { wch: 14 }, // 備考
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, `${cMon}月実績`);
+
+  // ダウンロード
+  const fileName = `居宅介護実績記録票_${displayName}_令和${reiwa}年${cMon}月.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  toast('Excelファイルをダウンロードしました');
 }
 
 // 初期化
