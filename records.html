@@ -160,7 +160,7 @@
 // ==========================================
 // Supabase接続
 // ==========================================
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbysPAcPP8oG4ZiJrlhNlshZ3tMG4noRxBLDo5FdC1vShI4WJoMgxI4ALpO_rG3M2J6u/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzWdv3KJpcJsG8LAj-aH_o-KEg0yCj1B5Q4v0MDzlV38jHbAM_GnHzjm2Lo0Wi3q75N/exec';
 const SUPABASE_URL = 'https://pbqqqwwgswniuomjlhsh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBicXFxd3dnc3duaXVvbWpsaHNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MTA3NTcsImV4cCI6MjA4OTI4Njc1N30.XgImGhrTc-cVHO9tvapCCz0y3XJZn3ma4vnd_QBYfDk';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -575,15 +575,10 @@ async function exportToSheet() {
 
     console.log('実績記録票出力:', JSON.stringify(payload));
 
-    // GASにPOST（CORSの都合でno-corsでは結果が読めないため、GETも試行）
-    // まずPOSTで送信
-    await fetch(GAS_WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify(payload)
-    });
-
-    // no-corsではレスポンスが読めないので、完了メッセージを表示
+    // GASにGETで送信（Image方式 + fetch両方で確実に届ける）
+    const url = GAS_WEB_APP_URL + '?payload=' + encodeURIComponent(JSON.stringify(payload));
+    console.log('GAS GET送信:', url.substring(0, 100) + '...');
+    new Image().src = url;
     toast('スプレッドシートを生成しました。Googleドライブを確認してください');
 
   } catch (ex) {
