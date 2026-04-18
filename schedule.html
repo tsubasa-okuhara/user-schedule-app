@@ -853,14 +853,8 @@ function openSubmitAddModal() {
   const { nm, ny } = getSubmitTargetMonth();
   const nextMonthFirst = ds(ny, nm, 1);
 
-  // カレンダーで選択中の日付が提出対象月内ならそれを優先、月外なら対象月の1日
-  let defaultDate = nextMonthFirst;
-  if (selDate) {
-    const [sy, sm] = selDate.split('-').map(Number);
-    if (sy === ny && sm === nm) {
-      defaultDate = selDate;
-    }
-  }
+  // カレンダーで選択中の日付（selDate）があればそれを優先。なければ対象月の1日
+  const defaultDate = selDate || nextMonthFirst;
 
   document.getElementById('submitAddType').value = '移動';
   document.getElementById('submitAddDate').value = defaultDate;
