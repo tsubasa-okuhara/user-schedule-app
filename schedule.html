@@ -674,13 +674,13 @@ async function doAdd() {
       beneficiary_number: sessionStorage.getItem('beneficiaryNumber') || null
     };
     console.log('doAdd挿入データ:', JSON.stringify(row));
-    const { error } = await sb.from('schedule').insert(row);
-    console.log('doAdd結果:', JSON.stringify({ error }));
+    const { data: inserted, error } = await sb.from('schedule').insert(row).select('id').single();
+    console.log('doAdd結果:', JSON.stringify({ data: inserted, error }));
     if (error) throw error;
 
-    // スプレッドシート同期
+    // スプレッドシート同期（insert で返った id を supabaseId として渡す）
     syncToSheet({
-      action: 'add', supabaseId: null, date: date,
+      action: 'add', supabaseId: inserted?.id || null, date: date,
       helper: '担当未設定', client: clientName,
       startTime: start, endTime: end, task: type, summary: type,
       beneficiaryNumber: sessionStorage.getItem('beneficiaryNumber') || ''
@@ -852,8 +852,18 @@ function renderSubmitPreview() {
 function openSubmitAddModal() {
   const { nm, ny } = getSubmitTargetMonth();
   const nextMonthFirst = ds(ny, nm, 1);
+
+  // カレンダーで選択中の日付が提出対象月内ならそれを優先、月外なら対象月の1日
+  let defaultDate = nextMonthFirst;
+  if (selDate) {
+    const [sy, sm] = selDate.split('-').map(Number);
+    if (sy === ny && sm === nm) {
+      defaultDate = selDate;
+    }
+  }
+
   document.getElementById('submitAddType').value = '移動';
-  document.getElementById('submitAddDate').value = nextMonthFirst;
+  document.getElementById('submitAddDate').value = defaultDate;
   document.getElementById('submitAddStart').value = '09:00';
   document.getElementById('submitAddEnd').value = '11:00';
   document.getElementById('submitAddNote').value = '';
@@ -932,14 +942,14 @@ async function doSubmit() {
       beneficiary_number: bNum
     }));
     console.log('提出データ:', rows);
-    const { error } = await sb.from('schedule').insert(rows);
-    console.log('提出結果:', { error });
+    const { data: inserted, error } = await sb.from('schedule').insert(rows).select('id');
+    console.log('提出結果:', { data: inserted, error });
     if (error) throw error;
 
-    // スプレッドシート同期（各エントリを個別に送信）
-    submitEntries.forEach(e => {
+    // スプレッドシート同期（insert で返った id を各エントリに紐づけて送信）
+    submitEntries.forEach((e, idx) => {
       syncToSheet({
-        action: 'add', supabaseId: null, date: e.date,
+        action: 'add', supabaseId: inserted?.[idx]?.id || null, date: e.date,
         helper: '担当未設定', client: clientName,
         startTime: e.start, endTime: e.end,
         task: e.type, summary: e.note || e.type,
