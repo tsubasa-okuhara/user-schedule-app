@@ -214,11 +214,11 @@
 <!-- モーダル: 提出用追加 -->
 <div class="modal-overlay" id="submitAddModal"><div class="modal">
   <h3>希望日時を追加する</h3>
-  <div class="form-group"><label>サービス種類</label><select id="submitAddType"><option value="移動">移動支援</option><option value="居宅">居宅介護</option><option value="家事">家事援助</option><option value="通院">通院介助</option></select></div>
   <div class="form-group"><label>日付</label><input type="date" id="submitAddDate"></div>
   <div class="form-group"><label>開始時間</label><input type="time" id="submitAddStart" value="09:00"></div>
   <div class="form-group"><label>終了時間</label><input type="time" id="submitAddEnd" value="11:00"></div>
-  <div class="form-group"><label>内容メモ（任意）</label><textarea id="submitAddNote" placeholder="例：買い物に行きたい"></textarea></div>
+  <div class="form-group"><label>支援の内容</label><input type="text" id="submitAddHaisha" placeholder="例：自宅〜バスポイント"></div>
+  <div class="form-group"><label>備考（任意）</label><textarea id="submitAddNote" placeholder="例：5月1日〜5月15日の間で1回お願いします"></textarea></div>
   <div id="submitAddError" style="display:none;background:#fce4ec;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#c62828;font-weight:600;line-height:1.5"></div>
   <div class="modal-buttons"><button class="modal-btn cancel" onclick="closeModal('submitAddModal')">戻る</button><button class="modal-btn confirm" onclick="doSubmitAdd()">追加する</button></div>
 </div></div>
@@ -835,14 +835,16 @@ function getSubmitTargetMonth() {
 function renderSubmitPreview() {
   const { nm, ny } = getSubmitTargetMonth();
   document.getElementById('submitTarget').textContent = `${ny}年${nm}月分`;
-  const sorted = [...submitEntries].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const sorted = [...submitEntries]
+    .map((e, i) => ({ ...e, _idx: submitEntries.indexOf(e) }))
+    .sort((a,b)=>new Date(a.date)-new Date(b.date));
   let h = '';
   if (!sorted.length) {
     h = '<p style="color:#ccc;text-align:center;padding:12px">＋ボタンから希望日時を追加してください</p>';
   } else {
-    h = sorted.map((e,idx)=>{
-      const ti = taskInfo(e.type);
-      return `<div class="submit-entry"><div class="submit-entry-info"><div class="submit-entry-type">${ti.name}</div><div class="submit-entry-time">${fmtD(e.date).replace(/（.+）/,'')} ${e.start}〜${e.end}</div></div><button class="submit-entry-del" onclick="removeSubmitEntry(${idx})">✕</button></div>`;
+    h = sorted.map(e => {
+      const label = e.haisha || taskInfo(e.type).name;
+      return `<div class="submit-entry"><div class="submit-entry-info"><div class="submit-entry-type">${label}</div><div class="submit-entry-time">${fmtD(e.date).replace(/（.+）/,'')} ${e.start}〜${e.end}</div></div><button class="submit-entry-del" onclick="removeSubmitEntry(${e._idx})">✕</button></div>`;
     }).join('');
   }
   document.getElementById('submitPreview').innerHTML = h;
@@ -856,20 +858,22 @@ function openSubmitAddModal() {
   // カレンダーで選択中の日付（selDate）があればそれを優先。なければ対象月の1日
   const defaultDate = selDate || nextMonthFirst;
 
-  document.getElementById('submitAddType').value = '移動';
   document.getElementById('submitAddDate').value = defaultDate;
   document.getElementById('submitAddStart').value = '09:00';
   document.getElementById('submitAddEnd').value = '11:00';
+  document.getElementById('submitAddHaisha').value = '';
   document.getElementById('submitAddNote').value = '';
   document.getElementById('submitAddModal').classList.add('show');
 }
 
 async function doSubmitAdd() {
   clearModalError('submitAddError');
-  const type = document.getElementById('submitAddType').value;
+  // サービス種別は当面「移動」固定（居宅/家事/通院の扱いは今後決定）
+  const type = '移動';
   const date = document.getElementById('submitAddDate').value;
   const start = document.getElementById('submitAddStart').value;
   const end = document.getElementById('submitAddEnd').value;
+  const haisha = document.getElementById('submitAddHaisha').value.trim();
   const note = document.getElementById('submitAddNote').value;
   if (!date||!start||!end) { showModalError('submitAddError', '日付と時間を入力してください'); return; }
   if (start >= end) { showModalError('submitAddError', '終了時間は開始時間より後にしてください'); return; }
@@ -877,23 +881,22 @@ async function doSubmitAdd() {
   // 時間重複チェック①（追加済みリスト内）
   const dup1 = checkOverlapInSubmitEntries(date, start, end, -1);
   if (dup1) {
-    const ti = taskInfo(dup1.type);
-    showModalError('submitAddError', `⚠ ${ti.name} ${dup1.start}〜${dup1.end} と時間が重複しています`);
+    showModalError('submitAddError', `⚠ ${dup1.haisha || dup1.type} ${dup1.start}〜${dup1.end} と時間が重複しています`);
     return;
   }
 
   // 時間重複チェック②（Supabase既存データ — 来月分を直接取得）
   try {
     const { data: existing } = await sb.from('schedule')
-      .select('task, start_time, end_time')
+      .select('task, haisha, start_time, end_time')
       .eq('client', clientName).eq('date', date);
     if (existing && existing.length > 0) {
       for (const row of existing) {
         const rs = fmtTime(row.start_time);
         const re = fmtTime(row.end_time);
         if (timeOverlaps(start, end, rs, re)) {
-          const ti = taskInfo(row.task);
-          showModalError('submitAddError', `⚠ 既存の予定（${ti.name} ${rs}〜${re}）と時間が重複しています`);
+          const label = row.haisha || taskInfo(row.task).name;
+          showModalError('submitAddError', `⚠ 既存の予定（${label} ${rs}〜${re}）と時間が重複しています`);
           return;
         }
       }
@@ -902,7 +905,7 @@ async function doSubmitAdd() {
     console.warn('既存データ重複チェックエラー:', ex);
   }
 
-  submitEntries.push({ type, date, start, end, note });
+  submitEntries.push({ type, date, start, end, haisha, note });
   renderSubmitPreview();
   closeModal('submitAddModal');
   toast('希望を追加しました');
@@ -928,8 +931,9 @@ async function doSubmit() {
     const rows = submitEntries.map(e => ({
       date: e.date,
       client: clientName,
-      task: e.type,
-      summary: e.note || e.type,
+      task: e.type,                              // サービス種別（当面 '移動' 固定）
+      haisha: e.haisha || null,                  // 支援の内容（例: 自宅〜バスポイント）
+      summary: e.note || null,                   // 備考（例: 期間内 1 回など）
       start_time: e.start,
       end_time: e.end,
       name: '担当未設定',
@@ -946,7 +950,8 @@ async function doSubmit() {
         action: 'add', supabaseId: inserted?.[idx]?.id || null, date: e.date,
         helper: '担当未設定', client: clientName,
         startTime: e.start, endTime: e.end,
-        task: e.type, summary: e.note || e.type,
+        task: e.type, summary: e.note || '',
+        haisha: e.haisha || '',
         beneficiaryNumber: bNum || ''
       });
     });
