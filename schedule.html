@@ -144,11 +144,6 @@
     <button onclick="changeMonth(1)">▶</button>
   </div>
 </div>
-<div class="page-tabs">
-  <button class="page-tab active" onclick="switchPage(this,'confirm')">確認</button>
-  <button class="page-tab" onclick="switchPage(this,'submit')">提出</button>
-  <button class="page-tab" onclick="switchPage(this,'change')">変更・追加</button>
-</div>
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:#2196f3"></div>移動</div>
   <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div>居宅</div>
@@ -160,43 +155,23 @@
   <div class="cal-grid" id="calGrid"></div>
 </div>
 
-<!-- 確認タブ -->
-<div class="section active" id="sec-confirm">
-  <div class="day-detail" id="dayDetail">
-    <div class="detail-header"><span id="detailDate"></span><span class="count-badge" id="detailCount"></span></div>
-    <div id="detailList"></div>
+<!-- 統合スケジュール -->
+<div class="section active" style="padding:12px 12px 20px">
+  <!-- 目立つ追加ボタン -->
+  <button class="submit-add-btn" onclick="openSubmitAddModal()" style="width:calc(100% - 4px);margin:0 2px 14px">＋ 希望日時を追加</button>
+
+  <!-- 選択日の予定一覧 -->
+  <div class="day-detail" id="scheduleSection">
+    <div class="detail-header"><span id="scheduleDate"></span><span class="count-badge" id="scheduleCount"></span></div>
+    <div id="scheduleList"></div>
   </div>
-  <div style="padding:12px 16px 20px">
+
+  <!-- PDF出力 -->
+  <div style="padding:16px 4px 0">
     <button id="pdfBtn" onclick="generatePDF()" style="width:100%;padding:12px;border-radius:12px;border:2px solid #2c7a5c;background:#fff;color:#2c7a5c;font-size:14px;font-weight:700;cursor:pointer">📄 この月のスケジュールをPDFで出力</button>
   </div>
 </div>
 
-<!-- 提出タブ -->
-<div class="section" id="sec-submit">
-  <div class="submit-container">
-    <div class="submit-card">
-      <div class="submit-header"><h3>来月のスケジュール希望提出</h3><p id="submitTarget"></p></div>
-      <button class="submit-add-btn" onclick="openSubmitAddModal()">＋ 希望日時を追加</button>
-      <div class="submit-list" style="padding:0 18px 12px"><h4 style="font-size:14px;color:#555;margin-bottom:8px;padding-top:8px;border-top:1px solid #f0f0f0">追加済みの希望一覧</h4><div class="submit-preview" id="submitPreview"></div></div>
-      <div class="submit-info" style="padding:8px 18px 12px"><div class="info-row" style="border-bottom:none;padding:6px 0"><span class="info-label">件数</span><span class="info-value" id="submitEntryCount">0件</span></div></div>
-      <div class="submit-action"><button class="submit-btn" id="submitBtn" onclick="doSubmit()">提出する</button></div>
-    </div>
-  </div>
-</div>
-
-<!-- 変更タブ -->
-<div class="section" id="sec-change">
-  <div class="change-container">
-    <div class="change-hint">カレンダーの日付をタップして、予定の変更・キャンセルができます。右下の「＋」ボタンから追加もできます。</div>
-    <div class="day-detail" id="changeDayDetail">
-      <div class="detail-header"><span id="changeDetailDate"></span></div>
-      <div id="changeDetailList"></div>
-    </div>
-    <div class="request-history"><h4>最近の変更申請</h4><div id="requestList"></div></div>
-  </div>
-</div>
-
-<button class="add-float-btn" id="fabAdd" onclick="openAddModal()">＋</button>
 <div class="spacer"></div>
 
 <!-- モーダル: 追加 -->
@@ -378,10 +353,9 @@ function clearModalError(errorId) {
 const clientName = sessionStorage.getItem('loggedInClient') || '';
 const displayName = sessionStorage.getItem('loggedInName') || '';
 let scheduleData = {}; // { '2026-04-01': [ {id, task, start, end, helper, summary}, ... ] }
-let cYear, cMon, selDate, curPage = 'confirm';
+let cYear, cMon, selDate;
 let editItem = null, cancelItem = null;
 let requests = []; // ローカル管理の申請履歴
-let submitEntries = []; // { type, date, start, end, note }
 let isProcessing = false; // 二重送信防止フラグ
 
 // ==========================================
@@ -390,17 +364,6 @@ let isProcessing = false; // 二重送信防止フラグ
 function timeOverlaps(start1, end1, start2, end2) {
   // "10:00" のような文字列を比較（辞書順で時刻比較が成立する）
   return start1 < end2 && start2 < end1;
-}
-
-function checkOverlapInSubmitEntries(date, start, end, excludeIdx) {
-  // submitEntries 内で同じ日に時間重複があるかチェック
-  for (let i = 0; i < submitEntries.length; i++) {
-    if (i === excludeIdx) continue;
-    if (submitEntries[i].date === date && timeOverlaps(start, end, submitEntries[i].start, submitEntries[i].end)) {
-      return submitEntries[i];
-    }
-  }
-  return null;
 }
 
 function checkOverlapInSchedule(date, start, end, excludeId) {
@@ -437,8 +400,7 @@ async function init() {
 
   await loadSchedule();
   renderCalendar();
-  renderDayDetail();
-  renderChangeDayDetail();
+  renderScheduleList();
   console.log('=== schedule.html init完了 ===');
 }
 
@@ -551,8 +513,7 @@ function renderCalendar() {
 function selectDate(d) {
   selDate = d;
   document.querySelectorAll('.cal-day').forEach(c => c.classList.toggle('selected', c.dataset.date===d));
-  renderDayDetail();
-  renderChangeDayDetail();
+  renderScheduleList();
 }
 
 async function changeMonth(dir) {
@@ -562,73 +523,57 @@ async function changeMonth(dir) {
   selDate = ds(cYear, cMon, 1);
   await loadSchedule();
   renderCalendar();
-  renderDayDetail();
-  renderChangeDayDetail();
+  renderScheduleList();
 }
 
 // ==========================================
-// 確認タブ: 日別詳細
+// 統合スケジュール一覧（選択日の予定 + 変更/キャンセル）
 // ==========================================
-function renderDayDetail() {
-  document.getElementById('detailDate').textContent = fmtD(selDate);
+function renderScheduleList() {
+  const dateEl = document.getElementById('scheduleDate');
+  const countEl = document.getElementById('scheduleCount');
+  const listEl = document.getElementById('scheduleList');
+  if (!dateEl || !listEl) return;
+
+  dateEl.textContent = fmtD(selDate);
   const items = scheduleData[selDate] || [];
-  document.getElementById('detailCount').textContent = items.length ? `${items.length}件` : '';
-  const l = document.getElementById('detailList');
-  if (!items.length) { l.innerHTML = '<div class="empty-msg">この日の予定はありません</div>'; return; }
-  l.innerHTML = items.map(i => {
+  if (countEl) countEl.textContent = items.length ? `${items.length}件` : '';
+
+  if (!items.length) {
+    listEl.innerHTML = '<div class="empty-msg">この日の予定はありません</div>';
+    return;
+  }
+  listEl.innerHTML = items.map((i, idx) => {
     const ti = taskInfo(i.task);
+    const label = i.haisha || ti.name;
+    const timeStr = i.end ? `${i.start} 〜 ${i.end}` : `${i.start} 〜（終了未定）`;
     return `<div class="sched-card">
       <div class="svc-bar" style="background:${ti.color}"></div>
       <div class="sched-body">
         <div class="sched-icon" style="background:${ti.color}20">${ti.icon}</div>
         <div class="sched-info">
-          <div class="sched-name">${ti.name}</div>
-          <div class="sched-time">${i.start} 〜 ${i.end}</div>
-          ${i.helper ? `<div class="sched-helper">担当: ${i.helper}</div>` : ''}
+          <div class="sched-name">${label}</div>
+          <div class="sched-time">${timeStr}</div>
+          <div class="sched-helper">担当: ${i.helper || '担当未設定'}</div>
           ${i.summary ? `<div class="sched-note">${i.summary}</div>` : ''}
         </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ==========================================
-// 変更タブ
-// ==========================================
-function renderChangeDayDetail() {
-  document.getElementById('changeDetailDate').textContent = fmtD(selDate);
-  const items = scheduleData[selDate] || [];
-  const l = document.getElementById('changeDetailList');
-  if (!items.length) { l.innerHTML = '<div class="empty-msg">この日の予定はありません</div>'; return; }
-  l.innerHTML = items.map((i, idx) => {
-    const ti = taskInfo(i.task);
-    return `<div class="sched-card">
-      <div class="svc-bar" style="background:${ti.color}"></div>
-      <div class="sched-body">
-        <div class="sched-icon" style="background:${ti.color}20">${ti.icon}</div>
-        <div class="sched-info">
-          <div class="sched-name">${ti.name}</div>
-          <div class="sched-time">${i.start} 〜 ${i.end}</div>
-          ${i.helper ? `<div class="sched-helper">担当: ${i.helper}</div>` : ''}
-        </div>
         <div class="sched-actions">
-          <button class="act-btn edit" onclick="openEditModal('${selDate}',${idx})">✎</button>
-          <button class="act-btn del" onclick="openCancelModal('${selDate}',${idx})">✕</button>
+          <button class="act-btn edit" onclick="openEditModal('${selDate}',${idx})" title="変更">✎</button>
+          <button class="act-btn del" onclick="openCancelModal('${selDate}',${idx})" title="キャンセル">✕</button>
         </div>
       </div>
     </div>`;
   }).join('');
 }
 
-function renderRequests() {
-  const l = document.getElementById('requestList');
-  if (!requests.length) { l.innerHTML = '<div class="empty-msg">申請履歴はありません</div>'; return; }
-  l.innerHTML = requests.map(r => `<div class="req-card">
-    <span class="req-type-badge ${r.kind}">${r.kind==='add'?'追加':r.kind==='edit'?'変更':'取消'}</span>
-    <span class="req-info">${r.desc}</span>
-    <span class="req-status wait">申請中</span>
-  </div>`).join('');
-}
+// 旧関数（後方互換のためだけに残す — HTML 側は既に無いので実質 no-op）
+function renderDayDetail() { renderScheduleList(); }
+function renderChangeDayDetail() { renderScheduleList(); }
+
+// 旧 UI の「最近の変更申請」欄が無くなったので no-op。
+// requests 配列自体は doSubmitAdd / doEdit / doCancel 側で履歴として残している
+// （将来的な UI 再導入のため）。
+function renderRequests() { /* no-op */ }
 
 // ==========================================
 // 追加
@@ -833,26 +778,6 @@ function getSubmitTargetMonth() {
   return { nm, ny };
 }
 
-function renderSubmitPreview() {
-  const { nm, ny } = getSubmitTargetMonth();
-  document.getElementById('submitTarget').textContent = `${ny}年${nm}月分`;
-  const sorted = [...submitEntries]
-    .map((e, i) => ({ ...e, _idx: submitEntries.indexOf(e) }))
-    .sort((a,b)=>new Date(a.date)-new Date(b.date));
-  let h = '';
-  if (!sorted.length) {
-    h = '<p style="color:#ccc;text-align:center;padding:12px">＋ボタンから希望日時を追加してください</p>';
-  } else {
-    h = sorted.map(e => {
-      const label = e.haisha || taskInfo(e.type).name;
-      const timeStr = e.end ? `${e.start}〜${e.end}` : `${e.start}〜（終了未定）`;
-      return `<div class="submit-entry"><div class="submit-entry-info"><div class="submit-entry-type">${label}</div><div class="submit-entry-time">${fmtD(e.date).replace(/（.+）/,'')} ${timeStr}</div></div><button class="submit-entry-del" onclick="removeSubmitEntry(${e._idx})">✕</button></div>`;
-    }).join('');
-  }
-  document.getElementById('submitPreview').innerHTML = h;
-  document.getElementById('submitEntryCount').textContent = sorted.length + '件';
-}
-
 function openSubmitAddModal() {
   const { nm, ny } = getSubmitTargetMonth();
   const nextMonthFirst = ds(ny, nm, 1);
@@ -869,10 +794,15 @@ function openSubmitAddModal() {
   document.getElementById('submitAddModal').classList.add('show');
 }
 
+/**
+ * 「＋ 希望日時を追加」ボタン経由で、1 件ずつ即座に Supabase に保存する。
+ * 旧「提出タブの batch 提出」は廃止。1 件ごとにシート同期も走る。
+ */
 async function doSubmitAdd() {
+  if (isProcessing) { console.log('処理中のため無視'); return; }
   clearModalError('submitAddError');
-  // サービス種別は当面「移動」固定（居宅/家事/通院の扱いは今後決定）
-  const type = '移動';
+
+  const type = '移動';  // サービス種別は当面「移動」固定（居宅/家事/通院の扱いは今後決定）
   const date = document.getElementById('submitAddDate').value;
   const start = document.getElementById('submitAddStart').value;
   const end = document.getElementById('submitAddEnd').value;  // 任意
@@ -886,19 +816,10 @@ async function doSubmitAdd() {
   if (!endPlace) { showModalError('submitAddError', '終了場所を入力してください'); return; }
   if (end && start >= end) { showModalError('submitAddError', '終了時間は開始時間より後にしてください'); return; }
 
-  // haisha = 「開始場所〜終了場所」で結合
   const haisha = `${startPlace}〜${endPlace}`;
 
-  // 時間重複チェック（終了時間が指定されている場合のみ）
+  // 時間重複チェック（終了時間が指定されている場合のみ、Supabase既存データと照合）
   if (end) {
-    // ①追加済みリスト内
-    const dup1 = checkOverlapInSubmitEntries(date, start, end, -1);
-    if (dup1) {
-      showModalError('submitAddError', `⚠ ${dup1.haisha || dup1.type} ${dup1.start}〜${dup1.end} と時間が重複しています`);
-      return;
-    }
-
-    // ②Supabase既存データ
     try {
       const { data: existing } = await sb.from('schedule')
         .select('task, haisha, start_time, end_time')
@@ -919,70 +840,50 @@ async function doSubmitAdd() {
     }
   }
 
-  submitEntries.push({ type, date, start, end, startPlace, endPlace, haisha, note });
-  renderSubmitPreview();
-  closeModal('submitAddModal');
-  toast('希望を追加しました');
-}
-
-function removeSubmitEntry(idx) {
-  submitEntries.splice(idx, 1);
-  renderSubmitPreview();
-}
-
-async function doSubmit() {
-  if (isProcessing) { console.log('処理中のため無視'); return; }
-  if (!submitEntries.length) { toast('希望を追加してください'); return; }
-
+  // Supabase に即時保存
   isProcessing = true;
-  const btn = document.getElementById('submitBtn');
-  const originalText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = '送信中…';
+  const btn = document.querySelector('#submitAddModal .modal-btn.confirm');
+  const originalText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '追加中…'; }
 
   try {
     const bNum = sessionStorage.getItem('beneficiaryNumber') || null;
-    const rows = submitEntries.map(e => ({
-      date: e.date,
+    const row = {
+      date,
       client: clientName,
-      task: e.type,                              // サービス種別（当面 '移動' 固定）
-      haisha: e.haisha || null,                  // 支援の内容（例: 自宅〜バスポイント）
-      summary: e.note || null,                   // 備考（例: 期間内 1 回など）
-      start_time: e.start,
-      end_time: e.end || null,                   // 終了時間は任意（空なら null）
+      task: type,
+      haisha: haisha,
+      summary: note || null,
+      start_time: start,
+      end_time: end || null,
       name: '担当未設定',
       beneficiary_number: bNum
-    }));
-    console.log('提出データ:', rows);
-    const { data: inserted, error } = await sb.from('schedule').insert(rows).select('id');
-    console.log('提出結果:', { data: inserted, error });
+    };
+    const { data: inserted, error } = await sb.from('schedule').insert(row).select('id').single();
     if (error) throw error;
 
-    // スプレッドシート同期（insert で返った id を各エントリに紐づけて送信）
-    submitEntries.forEach((e, idx) => {
-      syncToSheet({
-        action: 'add', supabaseId: inserted?.[idx]?.id || null, date: e.date,
-        helper: '担当未設定', client: clientName,
-        startTime: e.start, endTime: e.end || '',
-        task: e.type, summary: e.note || '',
-        haisha: e.haisha || '',
-        beneficiaryNumber: bNum || ''
-      });
+    // スプレッドシート同期
+    syncToSheet({
+      action: 'add', supabaseId: inserted?.id || null, date,
+      helper: '担当未設定', client: clientName,
+      startTime: start, endTime: end || '',
+      task: type, summary: note || '', haisha,
+      beneficiaryNumber: bNum || ''
     });
 
-    submitEntries = [];
-    renderSubmitPreview();
-    const tgt = getSubmitTargetMonth();
+    requests.unshift({ kind:'add', desc:`${fmtD(date)} ${haisha} ${start}〜${end || '未定'}` });
+    selDate = date;
     await loadSchedule();
     renderCalendar();
-    toast(`${tgt.ny}年${tgt.nm}月のスケジュールを提出しました`);
+    renderScheduleList();
+    closeModal('submitAddModal');
+    toast('希望を追加しました');
   } catch (ex) {
-    console.error('提出エラー:', ex);
-    toast('提出に失敗しました: ' + (ex.message || ex));
+    console.error(ex);
+    showModalError('submitAddError', '追加に失敗しました: ' + (ex.message || ex));
   } finally {
     isProcessing = false;
-    btn.disabled = false;
-    btn.textContent = originalText;
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
   }
 }
 
@@ -1112,20 +1013,8 @@ async function generatePDF() {
 }
 
 // ==========================================
-// ページ切替
-// ==========================================
-function switchPage(tab, page) {
-  curPage = page;
-  document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
-  tab.classList.add('active');
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('sec-'+page).classList.add('active');
-  document.getElementById('fabAdd').classList.toggle('show', page==='change');
-  if (page==='submit') renderSubmitPreview();
-  if (page==='change') { renderChangeDayDetail(); renderRequests(); }
-}
-
 // 初期化
+// ==========================================
 init();
 </script>
 </body>
