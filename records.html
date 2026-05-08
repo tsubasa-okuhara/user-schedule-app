@@ -199,6 +199,14 @@ function toast(msg) {
 }
 
 // ==========================================
+// 共通: 利用者名の表示用正規化（半角・全角スペース除去）
+// ==========================================
+function formatClientName(name) {
+  if (!name) return '';
+  return String(name).replace(/[\s　]/g, '');
+}
+
+// ==========================================
 // 状態管理
 // ==========================================
 const clientName = sessionStorage.getItem('loggedInClient') || '';
@@ -216,8 +224,8 @@ async function init() {
     window.location.href = 'index.html';
     return;
   }
-  document.getElementById('headerUser').textContent = displayName + ' さん';
-  document.getElementById('infoName').textContent = displayName;
+  document.getElementById('headerUser').textContent = formatClientName(displayName) + ' さん';
+  document.getElementById('infoName').textContent = formatClientName(displayName);
   document.getElementById('infoJukyusha').textContent = beneficiaryNumber || '---';
 
   const now = new Date();
@@ -457,7 +465,7 @@ function exportPDF() {
   html += `<div>事業所番号: 1311102592　合同会社つばさ</div>`;
   html += `</div>`;
   html += `<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px">`;
-  html += `<div>受給者証番号: ${beneficiaryNumber || '---'}　氏名: ${displayName}</div>`;
+  html += `<div>受給者証番号: ${beneficiaryNumber || '---'}　氏名: ${formatClientName(displayName)}</div>`;
   html += `<div>〒144-0051 東京都大田区西蒲田2丁目1-4　TEL.03-6314-3672</div>`;
   html += `</div>`;
 
@@ -520,7 +528,7 @@ function exportPDF() {
 
   document.open();
   document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=0.35,maximum-scale=2">
-    <title>居宅介護実績記録票 ${cYear}年${cMon}月 - ${displayName}</title>
+    <title>居宅介護実績記録票 ${cYear}年${cMon}月 - ${formatClientName(displayName)}</title>
     <style>
       body{margin:0;background:#f0f0f0}
       .pdf-toolbar{position:sticky;top:0;z-index:10;background:#1a5276;padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:center}
@@ -565,7 +573,7 @@ async function exportToSheet() {
     const payload = {
       action: 'export_records',
       client: clientName,
-      displayName: displayName,
+      displayName: formatClientName(displayName),
       beneficiaryNumber: beneficiaryNumber,
       year: cYear,
       month: cMon,
@@ -601,7 +609,7 @@ function exportExcel() {
 
   // ヘッダー部分
   rows.push([`令和${reiwa}年`, '', `${cMon}月`, '', '', '居宅介護サービス提供実績記録票']);
-  rows.push(['受給者証番号', beneficiaryNumber || '', '', '', '支給決定障害者等氏名', displayName, '', '事業所番号', '1311102592']);
+  rows.push(['受給者証番号', beneficiaryNumber || '', '', '', '支給決定障害者等氏名', formatClientName(displayName), '', '事業所番号', '1311102592']);
   rows.push(['', '', '', '', '(障害児氏名)', '', '', '事業者及びその事業所', '合同会社つばさ']);
   rows.push(['契約支給量', '', '', '', '', '', '', '所', '奥原　友美']);
   rows.push([]); // 空行
@@ -681,7 +689,7 @@ function exportExcel() {
   XLSX.utils.book_append_sheet(wb, ws, `${cMon}月実績`);
 
   // ダウンロード
-  const fileName = `居宅介護実績記録票_${displayName}_令和${reiwa}年${cMon}月.xlsx`;
+  const fileName = `居宅介護実績記録票_${formatClientName(displayName)}_令和${reiwa}年${cMon}月.xlsx`;
   XLSX.writeFile(wb, fileName);
   toast('Excelファイルをダウンロードしました');
 }
