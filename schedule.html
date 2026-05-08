@@ -242,6 +242,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ==========================================
+// 共通: 利用者名の表示用正規化（半角・全角スペース除去）
+// ==========================================
+function formatClientName(name) {
+  if (!name) return '';
+  return String(name).replace(/[\s　]/g, '');
+}
+
+// ==========================================
 // GAS Web App連携（スプレッドシート同期）
 // ==========================================
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzWdv3KJpcJsG8LAj-aH_o-KEg0yCj1B5Q4v0MDzlV38jHbAM_GnHzjm2Lo0Wi3q75N/exec';
@@ -267,7 +275,7 @@ async function syncToSheet(payload) {
 const HELPER_APP_URL = 'https://village-tsubasa.web.app';
 
 async function notifyHelper(helperEmail, helperName, type, detail) {
-  if (!helperEmail || helperEmail === '' || helperName === '担当未設定') {
+  if (!helperEmail || helperEmail === '' || !helperName || helperName === '担当未設定') {
     console.log('通知スキップ: ヘルパー未設定');
     return;
   }
@@ -389,7 +397,7 @@ async function init() {
     window.location.href = 'index.html';
     return;
   }
-  document.getElementById('headerUser').textContent = displayName + ' さん';
+  document.getElementById('headerUser').textContent = formatClientName(displayName) + ' さん';
 
   const now = new Date();
   cYear = now.getFullYear();
@@ -554,7 +562,7 @@ function renderScheduleList() {
         <div class="sched-info">
           <div class="sched-name">${label}</div>
           <div class="sched-time">${timeStr}</div>
-          <div class="sched-helper">担当: ${i.helper || '担当未設定'}</div>
+          ${(i.helper && i.helper !== '担当未設定') ? `<div class="sched-helper">担当: ${i.helper}</div>` : ''}
           ${i.summary ? `<div class="sched-note">${i.summary}</div>` : ''}
         </div>
         <div class="sched-actions">
@@ -616,7 +624,7 @@ async function doAdd() {
       summary: type,
       start_time: start,
       end_time: end,
-      name: '担当未設定',
+      name: '',
       beneficiary_number: sessionStorage.getItem('beneficiaryNumber') || null
     };
     console.log('doAdd挿入データ:', JSON.stringify(row));
@@ -627,7 +635,7 @@ async function doAdd() {
     // スプレッドシート同期（insert で返った id を supabaseId として渡す）
     syncToSheet({
       action: 'add', supabaseId: inserted?.id || null, date: date,
-      helper: '担当未設定', client: clientName,
+      helper: '', client: clientName,
       startTime: start, endTime: end, task: type, summary: type,
       beneficiaryNumber: sessionStorage.getItem('beneficiaryNumber') || ''
     });
@@ -856,7 +864,7 @@ async function doSubmitAdd() {
       summary: note || null,
       start_time: start,
       end_time: end || null,
-      name: '担当未設定',
+      name: '',
       beneficiary_number: bNum
     };
     const { data: inserted, error } = await sb.from('schedule').insert(row).select('id').single();
@@ -865,7 +873,7 @@ async function doSubmitAdd() {
     // スプレッドシート同期
     syncToSheet({
       action: 'add', supabaseId: inserted?.id || null, date,
-      helper: '担当未設定', client: clientName,
+      helper: '', client: clientName,
       startTime: start, endTime: end || '',
       task: type, summary: note || '', haisha,
       beneficiaryNumber: bNum || ''
@@ -927,7 +935,7 @@ async function generatePDF() {
     let html = `<div style="width:1100px;font-family:'Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif;padding:20px;background:#fff">`;
     html += `<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px">`;
     html += `<div style="font-size:22px;font-weight:700">${cYear}年 　${cMon}月</div>`;
-    html += `<div style="font-size:22px;font-weight:700">${displayName}　様</div>`;
+    html += `<div style="font-size:22px;font-weight:700">${formatClientName(displayName)}様</div>`;
     html += `<div style="font-size:11px;color:#666;text-align:right">自費事業所つばさ　ビレッジ つばさ<br>〒144-0051 東京都大田区西蒲田2丁目1-4<br>TEL.03-6314-3672</div>`;
     html += `</div>`;
     html += `<div style="font-size:11px;color:#555;margin-bottom:8px">いつもお世話になっております。<br>今月の予定をご確認ください。訂正や変更ありましたら、ご連絡ください。よろしくお願いいたします。</div>`;
@@ -988,7 +996,7 @@ async function generatePDF() {
     // スマホ対応: document.writeで同一ページを書き換え
     document.open();
     document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=0.35,maximum-scale=2">
-      <title>${cYear}年${cMon}月 スケジュール - ${displayName}</title>
+      <title>${cYear}年${cMon}月 スケジュール - ${formatClientName(displayName)}</title>
       <style>
         body{margin:0;background:#f0f0f0}
         .pdf-toolbar{position:sticky;top:0;z-index:10;background:#2c7a5c;padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:center}
